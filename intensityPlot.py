@@ -62,19 +62,29 @@ def write_intensities(intensities: pd.DataFrame, output_path: pathlib.Path):
 
 
 def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
+    # Calculate averages
     intensities["dried_average"] = intensities[["dried_1", "dried_2", "dried_3"]].mean(
         axis=1
     )
-    intensities["dried_std_dev"] = intensities[["dried_1", "dried_2", "dried_3"]].std(
-        axis=1
-    )
-
     intensities["liquid_average"] = intensities[
         ["liquid_1", "liquid_2", "liquid_3"]
     ].mean(axis=1)
+
+    # Calculate standard deviations
+    intensities["dried_std_dev"] = intensities[["dried_1", "dried_2", "dried_3"]].std(
+        axis=1
+    )
     intensities["liquid_std_dev"] = intensities[
         ["liquid_1", "liquid_2", "liquid_3"]
     ].std(axis=1)
+
+    # Calculate coefficient of variation
+    intensities["dried_variation"] = (
+        intensities["dried_std_dev"] / intensities["dried_average"]
+    )
+    intensities["liquid_variation"] = (
+        intensities["liquid_std_dev"] / intensities["liquid_average"]
+    )
 
     return intensities
 
@@ -82,28 +92,46 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
 def make_plot(intensities: pd.DataFrame, output_path: pathlib.Path):
     output_file: pathlib.Path = pathlib.Path(output_path, "intensityPlot.html")
     plot_df: pd.DataFrame = intensities[
-        ["gene_name", "dried_average", "liquid_average"]
+        [
+            "gene_name",
+            "dried_average",
+            "liquid_average",
+            "dried_variation",
+            "liquid_variation",
+        ]
     ]
 
     plot = px.scatter(
-        plot_df, x="dried_average", y="liquid_average", hover_name="gene_name"
+        plot_df,
+        x="dried_average",
+        y="liquid_average",
+        hover_name="gene_name",
+        error_x="dried_variation",
+        error_y="liquid_variation",
     )
 
     plot.write_html(output_file)
 
 
 def main():
-    input_file = pathlib.Path(sys.argv[1])
-    output_path = input_file.parent
+    try:
+        input_file = pathlib.Path(sys.argv[1])
+        output_path = input_file.parent
 
-    if not input_file.match("proteinGroups.txt"):
-        print("You have not passed in the 'proteinGroups' text file. Please try again.")
-        print("Make sure the file is named 'proteinGroups.txt'")
-    else:
-        intensities: pd.DataFrame = get_intensity(input_file=input_file)
-        statistics_df: pd.DataFrame = calculate_statistics(intensities=intensities)
-        write_intensities(intensities=statistics_df, output_path=output_path)
-        make_plot(intensities=statistics_df, output_path=output_path)
+        if input_file.match("proteinGroups.txt"):
+            intensities: pd.DataFrame = get_intensity(input_file=input_file)
+            statistics_df: pd.DataFrame = calculate_statistics(intensities=intensities)
+            write_intensities(intensities=statistics_df, output_path=output_path)
+            make_plot(intensities=statistics_df, output_path=output_path)
+        else:
+            print(
+                "You have not passed in the 'proteinGroups' text file. Please try again."
+            )
+            print("Make sure the file is named 'proteinGroups.txt'")
+
+    except IndexError:
+        print("You must pass in a file path as the first argument. Please try again")
+        exit(1)
 
 
 if __name__ == "__main__":
