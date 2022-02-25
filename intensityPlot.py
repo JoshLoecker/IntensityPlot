@@ -155,7 +155,7 @@ def make_plot(intensities: pd.DataFrame, output_path: pathlib.Path) -> None:
     plot_new.write_html(output_file)
 
 
-def main():
+def main() -> None:
     try:
         input_file = pathlib.Path(sys.argv[1])
         output_path = input_file.parent
