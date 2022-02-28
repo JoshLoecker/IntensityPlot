@@ -1,9 +1,9 @@
+Listed hardest to easiest
+
+Find all clinically relavent proteins
 Determine expected concentration in plasma
-
-
 Create bubble plot
     Variation == size of bubble
     What variation value to use (dried or liquid)? Could use an average of the variations
 Line of best fit (regresstion)
     NOT DONE -> Place R^2 value on plot (annotation)
-Find all clinically relavent proteins
