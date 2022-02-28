@@ -1,34 +1,13 @@
-"""
-Project Goal
-Take data from an input script and collect the following columns:
-    1) Intensity dried_1
-    2) Intensity dried_2
-    3) Intensity dried_3
-    4) Intensity liquid_1
-    5) Intensity liquid_2
-    6) Intensity liquid_3
-
-From here, we should place these into a dataframe that ultimately looks like so
-    (Index is given in a pandas dataframe)
-
-    Index   gene_name   dried_1     dried_2     dried_3     liquid_1    liquid_2    liquid_3
-    0       A           100         400         500         750         314         6876
-    1       B           34          68          789         0           0           0
-    .       .           .           .           .           .           .
-    .       .           .           .           .           .           .
-    .       .           .           .           .           .           .
-    N       Z           N           N           N           N           N
-
-From here, we can use plotly to create a simple scatter plot with gene names
-"""
-import pathlib
+import clinicallyRelevant
 import csv
-import pandas as pd
-import sys
+import thefuzz as fuzzy_search
 import numpy as np
+import pandas as pd
+import pathlib
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+import sys
 
 
 def get_intensity(input_file: pathlib.Path) -> pd.DataFrame:
@@ -162,10 +141,17 @@ def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.Da
 
 
 def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
-    with open("clinicallyRelevant.txt", "r") as i_stream:
-        relevant_proteins: list[str] = i_stream.readlines()
+    """
+    This function will take an incoming dataframe and filter its protein_name column against clinically relevant proteins from the 'clinicallyRelevant.txt' file
 
-    return pd.DataFrame()
+    Use fuzzywuzzy as a search algorithm? https://pypi.org/project/fuzzywuzzy/
+
+    :param data_frame: The incoming dataframe
+    :return:
+    """
+    intersect_df: pd.DataFrame = pd.DataFrame()
+
+    return intersect_df
 
 
 def make_plot(
@@ -192,15 +178,6 @@ def make_plot(
         error_x=plot_df["dried_variation"],
         error_y=plot_df["liquid_variation"],
         trendline="ols",
-    )
-
-    customdata = np.stack(
-        (
-            plot_df["gene_name"],
-            plot_df["dried_variation"],
-            plot_df["liquid_variation"],
-        ),
-        axis=-1,
     )
 
     # TODO: Determine if 'hovermode="x unified"' is good
