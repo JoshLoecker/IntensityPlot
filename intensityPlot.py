@@ -28,12 +28,7 @@ import sys
 import numpy as np
 import plotly
 import plotly.express as px
-
-
-def get_protein_names(protein_name: str) -> str:
-    protein_name: list[str] = protein_name.split(";")
-    protein_name: str = ";".join(protein_name)
-    return protein_name
+import plotly.graph_objects as go
 
 
 def get_intensity(input_file: pathlib.Path) -> pd.DataFrame:
@@ -54,9 +49,7 @@ def get_intensity(input_file: pathlib.Path) -> pd.DataFrame:
 
         for line in reader:
             intensities["gene_name"].append(line[6])
-            intensities["protein_name"].append(
-                get_protein_names(line[5])
-            )  # Lines are sub-filtered by semi-colon, split protein names based on this
+            intensities["protein_name"].append(line[5])
             intensities["dried_1"].append(int(float(line[51])))
             intensities["dried_2"].append(int(float(line[52])))
             intensities["dried_3"].append(int(float(line[53])))
@@ -91,7 +84,7 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
 
     # Calculate coefficient of variation
     intensities["dried_variation"] = round(
-        intensities["dried_std_dev"] / intensities["dried_average"] * 100, 4
+        (intensities["dried_std_dev"] / intensities["dried_average"]) * 100, 4
     )
     intensities["liquid_variation"] = round(
         intensities["liquid_std_dev"] / intensities["liquid_average"] * 100, 4
@@ -101,6 +94,15 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
     intensities["dried_liquid_ratio"] = round(
         intensities["dried_average"] / intensities["liquid_average"], 4
     )
+
+    # Calculate size of bubble for bubble graph
+    intensities["size"] = round(
+        intensities[["dried_variation", "liquid_variation"]].mean(axis=1) * 10000000, 4
+    )
+
+    # Replace NA with -1
+    # This is required because some averages are 0, and dividing by 0 = NaN
+    intensities = intensities.fillna(-1)
 
     return intensities
 
@@ -140,29 +142,37 @@ def get_regression_results(plot: plotly.graph_objs.Figure) -> None:
 def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.DataFrame:
     """
     Any variantion values LESS THAN max_variation will be accepted
+    We must also filter GREATER THAN 0 because NaN values in the dataframe have been set to -1
+
     :param data_frame: The dataframe to filter from
     :param max_variation: The maximum variation value to accept
     :return: Nothing for now
     """
+
     return data_frame[
-        (data_frame["dried_variation"] < max_variation)
-        | (data_frame["liquid_variation"] < max_variation)
+        (
+            (0 < data_frame["dried_variation"])
+            & (data_frame["dried_variation"] < max_variation)
+        )
+        | (
+            (0 < data_frame["liquid_variation"])
+            & (data_frame["liquid_variation"] < max_variation)
+        )
     ]
 
 
-def filter_clinically_relevant(
-    data_frame: pd.DataFrame, clinically_relevant: list[str]
-) -> pd.DataFrame:
-    relevant_proteins = []
+def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
     with open("clinicallyRelevant.txt", "r") as i_stream:
-        pass
-        # continue appending to relevant_proteins list
+        relevant_proteins: list[str] = i_stream.readlines()
 
     return pd.DataFrame()
 
 
-def make_plot(intensities: pd.DataFrame, output_path: pathlib.Path) -> None:
-    output_file: pathlib.Path = pathlib.Path(output_path, "intensityPlot.html")
+def make_plot(
+    intensities: pd.DataFrame,
+    output_path: pathlib.Path,
+    output_file_name: str = "intensityPlot.html",
+) -> None:
     plot_df: pd.DataFrame = intensities[
         [
             "gene_name",
@@ -170,6 +180,7 @@ def make_plot(intensities: pd.DataFrame, output_path: pathlib.Path) -> None:
             "liquid_average",
             "dried_variation",
             "liquid_variation",
+            "size",
         ]
     ]
 
@@ -183,13 +194,23 @@ def make_plot(intensities: pd.DataFrame, output_path: pathlib.Path) -> None:
         trendline="ols",
     )
 
+    customdata = np.stack(
+        (
+            plot_df["gene_name"],
+            plot_df["dried_variation"],
+            plot_df["liquid_variation"],
+        ),
+        axis=-1,
+    )
+
     # TODO: Determine if 'hovermode="x unified"' is good
     plot.update_traces()
     plot.update_layout(title=get_experiment_title(output_path), hovermode="x unified")
     plot.update_xaxes(title_text="Dried Average Intensity")
     plot.update_yaxes(title_text="Liquid Average Intensity")
 
-    plot.write_html(output_file)
+    write_out: pathlib.Path = output_path.joinpath(output_file_name)
+    plot.write_html(write_out)
 
 
 def main() -> None:
@@ -201,7 +222,9 @@ def main() -> None:
             intensities: pd.DataFrame = get_intensity(input_file=input_file)
             statistics_df: pd.DataFrame = calculate_statistics(intensities=intensities)
             filtered_variation: pd.Dataframe = filter_variation(statistics_df)
-            # filter_clinically_relevant: pd.DataFrame = filter_clinically_relevant()
+            filtered_clinically_relevant: pd.DataFrame = filter_clinically_relevant(
+                filtered_variation
+            )
             write_intensities(intensities=statistics_df, output_path=output_path)
             make_plot(intensities=statistics_df, output_path=output_path)
         else:
