@@ -1,8 +1,9 @@
-axis labels (dried/liquid)
-bubble plot with variation as size of bubble
-Line of best fit (regression)
-    R^2-value
-Get proteins w/ CV under 20%
-dried vs liquid ratio (1.0 is perfect)
-get clinically relavent proteins
-expected concentration in plasma
+Determine expected concentration in plasma
+
+
+Create bubble plot
+    Variation == size of bubble
+    What variation value to use (dried or liquid)? Could use an average of the variations
+Line of best fit (regresstion)
+    NOT DONE -> Place R^2 value on plot (annotation)
+Find all clinically relavent proteins
