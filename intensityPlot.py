@@ -101,7 +101,7 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
 
     # Calculate size of bubble for bubble graph
     intensities["plot_marker_size"] = round(
-        intensities[["dried_variation", "liquid_variation"]].mean(axis=1) * 10000000, 4
+        intensities[["dried_variation", "liquid_variation"]].mean(axis=1), 4
     )
 
     # Some averages are 0, and dividing by 0 = NaN
@@ -198,15 +198,28 @@ def make_plot(
         error_y="liquid_variation",
         trendline="ols",
         size="plot_marker_size",
+        custom_data=[plot_df["gene_name"], plot_df["plot_marker_size"]],
     )
     regression_calculation = RegressionData(plot)
 
-    # TODO: Determine if 'hovermode="x"' is good
-    plot.update_layout(title=get_experiment_title(output_path), hovermode="x")
+    # Add title and axis labels
+    plot.update_layout(title=get_experiment_title(output_path))
     plot.update_xaxes(title_text="Dried Average Intensity")
     plot.update_yaxes(title_text="Liquid Average Intensity")
 
-    # Add linear regression line
+    # Set the hover text
+    plot.update_traces(
+        hovertemplate="<br>".join(
+            [
+                "Gene Name: %{customdata[0]}",
+                "Dried Average: %{x}%",
+                "Liquid Average: %{y}%",
+                "Average Variation: ±%{customdata[1]}%",
+            ]
+        ),
+    )
+
+    # Add linear regression equation as an annotation
     regression_equation: str = f"(Liquid Average) = {regression_calculation.slope} * (Dried Average) + {regression_calculation.y_intercept}"
     regression_equation += f"<br>R² = {regression_calculation.r_squared}"
     plot.add_annotation(
@@ -219,6 +232,7 @@ def make_plot(
         align="right",
     )
 
+    # Write plot to file
     write_out: pathlib.Path = output_path.joinpath(output_file_name)
     plot.write_html(write_out)
 
