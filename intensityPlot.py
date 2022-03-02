@@ -1,4 +1,4 @@
-import clinicallyRelevant
+import clinically_relevant
 import csv
 import thefuzz as fuzzy_search
 import numpy as np
@@ -8,6 +8,31 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import sys
+
+
+class RegressionData:
+    """
+    This is a simple class to retrieve regression information from a plotly express graph
+    This was created to ensure it was easy to retrieve the requested value correctly
+
+    If a function returned y_intercept, slope, and r_squared, it may be confusing to determine
+        in which order these variables are being returned in
+
+    A class fixes this by allowing users to use the "dot operator" to retrieve the correct value
+
+    When passing in the 'plot' parameter, the 'trendline' option for plotly express graphs (or similar) should be used
+        https://plotly.com/python/linear-fits/
+    """
+
+    def __init__(self, plot: plotly.graph_objs.Figure):
+        # These values are hidden from public access using a double underscore
+        self.__regression_data: pd.DataFrame = px.get_trendline_results(plot)
+        self.__regression_model = self.__regression_data["px_fit_results"][0]
+        self.__summary = self.__regression_model.summary()
+
+        self.y_intercept: float = round(self.__regression_model.params[0], 4)
+        self.slope: float = round(self.__regression_model.params[1], 4)
+        self.r_squared: float = round(self.__regression_model.rsquared, 4)
 
 
 def get_intensity(input_file: pathlib.Path) -> pd.DataFrame:
@@ -75,13 +100,13 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
     )
 
     # Calculate size of bubble for bubble graph
-    intensities["size"] = round(
+    intensities["plot_marker_size"] = round(
         intensities[["dried_variation", "liquid_variation"]].mean(axis=1) * 10000000, 4
     )
 
-    # Replace NA with -1
-    # This is required because some averages are 0, and dividing by 0 = NaN
-    intensities = intensities.fillna(-1)
+    # Some averages are 0, and dividing by 0 = NaN
+    # Fix this by resetting values to 0
+    intensities = intensities.fillna(0)
 
     return intensities
 
@@ -110,12 +135,6 @@ def get_experiment_title(file_path: pathlib.Path) -> str:
     title += "Experiment"
 
     return title
-
-
-def get_regression_results(plot: plotly.graph_objs.Figure) -> None:
-    regression_data: pd.DataFrame = px.get_trendline_results(plot)
-    fit_results = regression_data["px_fit_results"][0].pvalues
-    raise NotImplementedError
 
 
 def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.DataFrame:
@@ -158,7 +177,7 @@ def make_plot(
     intensities: pd.DataFrame,
     output_path: pathlib.Path,
     output_file_name: str = "intensityPlot.html",
-) -> None:
+) -> plotly.graph_objects.Figure:
     plot_df: pd.DataFrame = intensities[
         [
             "gene_name",
@@ -166,7 +185,7 @@ def make_plot(
             "liquid_average",
             "dried_variation",
             "liquid_variation",
-            "size",
+            "plot_marker_size",
         ]
     ]
 
@@ -175,19 +194,35 @@ def make_plot(
         x="dried_average",
         y="liquid_average",
         hover_name="gene_name",
-        error_x=plot_df["dried_variation"],
-        error_y=plot_df["liquid_variation"],
+        error_x="dried_variation",
+        error_y="liquid_variation",
         trendline="ols",
+        size="plot_marker_size",
     )
+    regression_calculation = RegressionData(plot)
 
-    # TODO: Determine if 'hovermode="x unified"' is good
-    plot.update_traces()
-    plot.update_layout(title=get_experiment_title(output_path), hovermode="x unified")
+    # TODO: Determine if 'hovermode="x"' is good
+    plot.update_layout(title=get_experiment_title(output_path), hovermode="x")
     plot.update_xaxes(title_text="Dried Average Intensity")
     plot.update_yaxes(title_text="Liquid Average Intensity")
 
+    # Add linear regression line
+    regression_equation: str = f"(Liquid Average) = {regression_calculation.slope} * (Dried Average) + {regression_calculation.y_intercept}"
+    regression_equation += f"<br>R² = {regression_calculation.r_squared}"
+    plot.add_annotation(
+        text=regression_equation,
+        showarrow=False,
+        x=1,
+        y=0,
+        xref="paper",
+        yref="paper",
+        align="right",
+    )
+
     write_out: pathlib.Path = output_path.joinpath(output_file_name)
     plot.write_html(write_out)
+
+    return plot
 
 
 def main() -> None:
@@ -203,7 +238,10 @@ def main() -> None:
                 filtered_variation
             )
             write_intensities(intensities=statistics_df, output_path=output_path)
-            make_plot(intensities=statistics_df, output_path=output_path)
+            plot: plotly.graph_objs.Figure = make_plot(
+                intensities=statistics_df, output_path=output_path
+            )
+
         else:
             print(
                 "You have not passed in the 'proteinGroups' text file. Please try again."
