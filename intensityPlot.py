@@ -1,3 +1,5 @@
+import sklearn.linear_model
+
 import clinically_relevant
 import csv
 import thefuzz as fuzzy_search
@@ -7,6 +9,7 @@ import pathlib
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+from sklearn.linear_model import LinearRegression
 import sys
 
 
@@ -32,7 +35,33 @@ class RegressionData:
 
         self.y_intercept: float = self.__regression_model.params[0]
         self.slope: float = self.__regression_model.params[1]
-        self.r_squared: float = self.__regression_model.rsquared
+        self.r_squared: float = self.__regression_model.r_squared
+
+
+class CalculateLinearRegression:
+    def __init__(self, data_frame: pd.DataFrame):
+        """
+        Calculate the trendline required for linear regression
+
+        From: https://stackoverflow.com/questions/65135524/adding-trendline-on-plotly-scatterplot
+        :param data_frame:
+        :return:
+        """
+
+        x_values = np.array(data_frame["dried_average"]).reshape((-1, 1))
+        y_values = np.array(data_frame["liquid_average"])
+
+        self.__linear_regression = LinearRegression()
+        self.__linear_regression.fit(
+            X=x_values,
+            y=y_values,
+        )
+
+        self.linear_fit: np.ndarray = self.__linear_regression.predict(x_values)
+
+        self.slope = float(self.__linear_regression.coef_)
+        self.y_intercept = float(self.__linear_regression.intercept_)
+        self.r_squared = float(self.__linear_regression.score(X=x_values, y=y_values))
 
 
 def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
@@ -134,7 +163,7 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
     )
 
     # Calculate size of bubble for bubble graph
-    intensities["plot_marker_size"] = round(
+    intensities["average_variation"] = round(
         intensities[["dried_variation", "liquid_variation"]].mean(axis=1), 4
     )
 
@@ -239,58 +268,143 @@ def make_plot(
             "liquid_average",
             "dried_variation",
             "liquid_variation",
-            "plot_marker_size",
+            "average_variation",
         ]
     ]
 
-    plot = go.Figure()
+    # Calculate information required to create a trendline trace
+    trendline = CalculateLinearRegression(plot_df)
 
     # Create the plot
+    plot = go.Figure()
+    # Bubble size is set to dried variation
     plot.add_trace(
         go.Scatter(
             x=plot_df["dried_average"],
             y=plot_df["liquid_average"],
-            error_x=dict()
-        ))
-
-        px.scatter(
-            data_frame=plot_df,
-            x="dried_average",
-            y="liquid_average",
-            error_x="dried_variation",
-            error_y="liquid_variation",
-            trendline="ols",
-            size="dried_variation",
-            custom_data=[
-                plot_df["gene_name"],
-                plot_df["plot_marker_size"],
-            ],
+            mode="markers",
+            marker=dict(
+                size=plot_df["dried_variation"],
+                sizemode="area",
+                # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
+                sizeref=2.0 * plot_df["dried_variation"].max() / (40.0**2),
+                sizemin=4,
+            ),
         )
     )
-    regression_calculation = RegressionData(plot)
+    # Bubble size is set to liquid variation
+    plot.add_trace(
+        go.Scatter(
+            visible=False,
+            x=plot_df["dried_average"],
+            y=plot_df["liquid_average"],
+            mode="markers",
+            marker=dict(
+                size=plot_df["liquid_variation"],
+                sizemode="area",
+                # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
+                sizeref=2.0 * plot_df["liquid_variation"].max() / (40.0**2),
+                sizemin=4,
+            ),
+        )
+    )
+    # Bubble size is set to average variation
+    plot.add_trace(
+        go.Scatter(
+            visible=False,
+            x=plot_df["dried_average"],
+            y=plot_df["liquid_average"],
+            mode="markers",
+            marker=dict(
+                size=plot_df["average_variation"],
+                sizemode="area",
+                # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
+                sizeref=2.0 * plot_df["average_variation"].max() / (40.0**2),
+                sizemin=4,
+            ),
+        )
+    )
+
+    # Add trendline
+    plot.add_trace(
+        go.Scatter(
+            x=plot_df["dried_average"],
+            y=trendline.linear_fit,
+            name="Linear Regression",
+            mode="lines",
+            marker=dict(color="red"),
+            hoverinfo="skip",
+        )
+    )
+
+    # Set hover template for all traces in figure
+    plot.update_traces(
+        # Only select graphs that contain points, exclude trendline
+        selector={"mode": "markers"},
+        name="Intensities",
+        mode="markers",
+        error_x=dict(type="data", array=plot_df["dried_variation"], visible=True),
+        error_y=dict(type="data", array=plot_df["liquid_variation"], visible=True),
+        customdata=plot_df[
+            [
+                "gene_name",
+                "dried_variation",
+                "liquid_variation",
+                "average_variation",
+            ]
+        ],
+        hovertemplate="<br>".join(
+            [
+                "Gene Name: %{customdata[0]}",
+                "Dried Average: %{x}%",
+                "Liquid Average: %{y}%",
+                "Average Variation: ± %{customdata[3]}%",
+                "<extra></extra>",
+            ]
+        ),
+    )
+
+    # Add buttons to filter through each of the various intensities
+    # Dried, Liquid, Average, Trendline
+    plot.update_layout(
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="up",
+                showactive=True,
+                buttons=list(
+                    [
+                        dict(
+                            label="View Dried Variation",
+                            method="update",
+                            args=[{"visible": [True, False, False, True]}],
+                        ),
+                        dict(
+                            label="View Liquid Variation",
+                            method="update",
+                            args=[{"visible": [False, True, False, True]}],
+                        ),
+                        dict(
+                            label="View Average Variation",
+                            method="update",
+                            args=[{"visible": [False, False, True, True]}],
+                        ),
+                    ]
+                ),
+            )
+        ]
+    )
 
     # Add title and axis labels
     plot.update_layout(title=get_experiment_title(input_data))
     plot.update_xaxes(title_text="Dried Average Intensity")
     plot.update_yaxes(title_text="Liquid Average Intensity")
 
-    # Set the hover text
-    plot.update_traces(
-        hovertemplate="<br>".join(
-            [
-                "Gene Name: %{customdata[0]}",
-                "Dried Average: %{x}%",
-                "Liquid Average: %{y}%",
-                "Average Variation: ± %{customdata[1]}%",
-            ]
-        ),
-    )
-
     # Add linear regression equation as an annotation
     regression_equation = "<br>".join(
         [
-            f"(Liquid Average) = {regression_calculation.slope:.3f} * (Dried Average) + {regression_calculation.y_intercept:.3e}",
-            f"R² = {regression_calculation.r_squared:.3f}",
+            f"(Liquid Average) = {trendline.slope:.3f} * (Dried Average) + {trendline.y_intercept:.3e}",
+            f"R² = {trendline.r_squared:.3f}",
             f"Unique proteins identified = {len(plot_df['gene_name'].values)}",
         ]
     )
@@ -305,6 +419,7 @@ def make_plot(
     )
 
     # Make buttons to modify graph
+    plot.update_layout()
 
     return plot
 
