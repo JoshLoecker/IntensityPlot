@@ -1,7 +1,7 @@
 import clinically_relevant
 import filter_values
 import linear_regression
-import write_data
+import file_operations
 
 import csv
 import thefuzz as fuzzy_search
@@ -107,39 +107,6 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
     return intensities
 
 
-def get_experiment_title(file_path: pathlib.Path) -> str:
-    """
-    This function is used to determine what type of experiment we are dealing with
-
-    It is very specific to the testing data currently available
-    This function should most likely be included to accept a parameter (or read from a configuration file) to determine the experiment name
-
-    :param file_path: The file path where the proteinGroups.txt file is located
-    :return: A string containing the name of the experiment
-    """
-    str_file_path: str = str(file_path).lower()
-    title: str = ""
-
-    # Found "direct" in the file path
-    if str_file_path.find("direct") != -1:
-        title += "Direct-"
-    # Found "c18" in the file path
-    elif str_file_path.find("c18") != -1:
-        title += "C18-"
-
-    # Found "urea" in the file path
-    if str_file_path.find("urea") != -1:
-        title += "Urea "
-    # Found "sdc" in the file path
-    elif str_file_path.find("sdc") != -1:
-        title += "SDC "
-
-    # Always append 'Experiment'. This is in case we could not find one of the specified cases above
-    title += "Experiment"
-
-    return title
-
-
 def make_plot(
     intensities: pd.DataFrame,
     input_data: pathlib.Path,
@@ -234,7 +201,7 @@ def make_plot(
     plot.update_traces(
         # Only select graphs that contain points, exclude trendline
         selector={"mode": "markers"},
-        name="Intensities",
+        name="Variation",
         mode="markers",
         error_x=dict(type="data", array=plot_df["dried_variation"], visible=True),
         error_y=dict(type="data", array=plot_df["liquid_variation"], visible=True),
@@ -289,7 +256,7 @@ def make_plot(
     )
 
     # Add title and axis labels
-    plot.update_layout(title=get_experiment_title(input_data))
+    plot.update_layout(title=file_operations.get_experiment_title(input_data))
     plot.update_xaxes(title_text="Dried Average Intensity")
     plot.update_yaxes(title_text="Liquid Average Intensity")
 
@@ -329,8 +296,10 @@ def main() -> None:
             # data_frame = fileter_values.filter_clinically_relevant(data_frame)
 
             plot = make_plot(intensities=data_frame, input_data=input_file)
-            write_data.write_intensities(data_frame=data_frame, output_path=output_path)
-            write_data.write_plot_to_file(plot, output_path)
+            file_operations.write_intensities(
+                data_frame=data_frame, output_path=output_path
+            )
+            file_operations.write_plot_to_file(plot, output_path)
 
         else:
             print(

@@ -1,4 +1,39 @@
 import pandas as pd
+import pathlib
+import plotly
+
+
+def get_experiment_title(file_path: pathlib.Path) -> str:
+    """
+    This function is used to determine what type of experiment we are dealing with
+
+    It is very specific to the testing data currently available
+    This function should most likely be included to accept a parameter (or read from a configuration file) to determine the experiment name
+
+    :param file_path: The file path where the proteinGroups.txt file is located
+    :return: A string containing the name of the experiment
+    """
+    str_file_path: str = str(file_path).lower()
+    title: str = ""
+
+    # Found "direct" in the file path
+    if str_file_path.find("direct") != -1:
+        title += "Direct-"
+    # Found "c18" in the file path
+    elif str_file_path.find("c18") != -1:
+        title += "C18-"
+
+    # Found "urea" in the file path
+    if str_file_path.find("urea") != -1:
+        title += "Urea "
+    # Found "sdc" in the file path
+    elif str_file_path.find("sdc") != -1:
+        title += "SDC "
+
+    # Always append 'Experiment'. This is in case we could not find one of the specified cases above
+    title += "Experiment"
+
+    return title
 
 
 def write_intensities(
