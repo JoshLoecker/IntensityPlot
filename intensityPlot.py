@@ -243,19 +243,29 @@ def make_plot(
         ]
     ]
 
+    plot = go.Figure()
+
     # Create the plot
-    plot = px.scatter(
-        data_frame=plot_df,
-        x="dried_average",
-        y="liquid_average",
-        error_x="dried_variation",
-        error_y="liquid_variation",
-        trendline="ols",
-        size="plot_marker_size",
-        custom_data=[
-            plot_df["gene_name"],
-            plot_df["plot_marker_size"],
-        ],
+    plot.add_trace(
+        go.Scatter(
+            x=plot_df["dried_average"],
+            y=plot_df["liquid_average"],
+            error_x=dict()
+        ))
+
+        px.scatter(
+            data_frame=plot_df,
+            x="dried_average",
+            y="liquid_average",
+            error_x="dried_variation",
+            error_y="liquid_variation",
+            trendline="ols",
+            size="dried_variation",
+            custom_data=[
+                plot_df["gene_name"],
+                plot_df["plot_marker_size"],
+            ],
+        )
     )
     regression_calculation = RegressionData(plot)
 
@@ -293,6 +303,8 @@ def make_plot(
         yref="paper",
         align="right",
     )
+
+    # Make buttons to modify graph
 
     return plot
 
