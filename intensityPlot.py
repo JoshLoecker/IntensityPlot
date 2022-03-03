@@ -1,6 +1,8 @@
-import sklearn.linear_model
-
 import clinically_relevant
+import filter_values
+import linear_regression
+import write_data
+
 import csv
 import thefuzz as fuzzy_search
 import numpy as np
@@ -9,59 +11,7 @@ import pathlib
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from sklearn.linear_model import LinearRegression
 import sys
-
-
-class RegressionData:
-    """
-    This is a simple class to retrieve regression information from a plotly express graph
-    This was created to ensure it was easy to retrieve the requested value correctly
-
-    If a function returned y_intercept, slope, and r_squared, it may be confusing to determine
-        in which order these variables are being returned in
-
-    A class fixes this by allowing users to use the "dot operator" to retrieve the correct value
-
-    When passing in the 'plot' parameter, the 'trendline' option for plotly express graphs (or similar) should be used
-        https://plotly.com/python/linear-fits/
-    """
-
-    def __init__(self, plot: plotly.graph_objects.Figure):
-        # These values are hidden from public access using a double underscore
-        self.__regression_data: pd.DataFrame = px.get_trendline_results(plot)
-        self.__regression_model = self.__regression_data["px_fit_results"][0]
-        self.__summary = self.__regression_model.summary()
-
-        self.y_intercept: float = self.__regression_model.params[0]
-        self.slope: float = self.__regression_model.params[1]
-        self.r_squared: float = self.__regression_model.r_squared
-
-
-class CalculateLinearRegression:
-    def __init__(self, data_frame: pd.DataFrame):
-        """
-        Calculate the trendline required for linear regression
-
-        From: https://stackoverflow.com/questions/65135524/adding-trendline-on-plotly-scatterplot
-        :param data_frame:
-        :return:
-        """
-
-        x_values = np.array(data_frame["dried_average"]).reshape((-1, 1))
-        y_values = np.array(data_frame["liquid_average"])
-
-        self.__linear_regression = LinearRegression()
-        self.__linear_regression.fit(
-            X=x_values,
-            y=y_values,
-        )
-
-        self.linear_fit: np.ndarray = self.__linear_regression.predict(x_values)
-
-        self.slope = float(self.__linear_regression.coef_)
-        self.y_intercept = float(self.__linear_regression.intercept_)
-        self.r_squared = float(self.__linear_regression.score(X=x_values, y=y_values))
 
 
 def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
@@ -107,23 +57,6 @@ def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
             intensities["liquid_3"].append(int(float(line[56])))
 
     return pd.DataFrame(intensities)
-
-
-def write_intensities(
-    data_frame: pd.DataFrame,
-    output_path: pathlib.Path,
-    file_name: str = "intensityPlot.csv",
-) -> None:
-    """
-    This function will write the input dataframe to the specified output path and file name
-
-    :param data_frame: The data frame to write
-    :param output_path: The path/folder to write the dataframe to
-    :param file_name: The name for the file
-    :return: None
-    """
-    output_file: pathlib.Path = pathlib.Path(output_path, file_name)
-    data_frame.to_csv(output_file, index=False)
 
 
 def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
@@ -207,46 +140,6 @@ def get_experiment_title(file_path: pathlib.Path) -> str:
     return title
 
 
-def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.DataFrame:
-    """
-    This function will filter variation values
-
-    Any variantion values LESS THAN max_variation will be accepted
-    We must also filter GREATER THAN 0 because NaN values in the dataframe have been set to 0
-
-    We are currently accepting liquid OR dried variation less than max_variation
-
-    :param data_frame: The dataframe to filter from
-    :param max_variation: The maximum variation value to accept
-    :return: A pandas dataframe containing the filtered values
-    """
-
-    return data_frame[
-        (
-            (0 < data_frame["dried_variation"])
-            & (data_frame["dried_variation"] < max_variation)
-        )
-        | (
-            (0 < data_frame["liquid_variation"])
-            & (data_frame["liquid_variation"] < max_variation)
-        )
-    ]
-
-
-def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """
-    This function will take an incoming dataframe and filter its protein_name column against clinically relevant proteins from the 'clinicallyRelevant.txt' file
-
-    Use fuzzywuzzy as a search algorithm? https://pypi.org/project/fuzzywuzzy/
-
-    :param data_frame: The incoming dataframe
-    :return: A new dataframe containing the intersect of MaxQuant proteins and clinically relevant proteins
-    """
-    intersect_df: pd.DataFrame = pd.DataFrame()
-
-    return intersect_df
-
-
 def make_plot(
     intensities: pd.DataFrame,
     input_data: pathlib.Path,
@@ -273,7 +166,7 @@ def make_plot(
     ]
 
     # Calculate information required to create a trendline trace
-    trendline = CalculateLinearRegression(plot_df)
+    trendline = linear_regression.CalculateLinearRegression(plot_df)
 
     # Create the plot
     plot = go.Figure()
@@ -424,36 +317,6 @@ def make_plot(
     return plot
 
 
-def write_plot_to_file(
-    plot: plotly.graph_objects.Figure,
-    file_path: pathlib.Path,
-    file_name: str = "intensityPlot",
-):
-    """
-    This function will simply handle writing the plotly graph to an output file
-
-    :param plot: The plotly graph
-    :param file_path: The path/folder to save the graph
-    :param file_name: The name of the output file, EXCLUDING the file extension
-    :return: None
-    """
-    # If an extension is found in file_name
-    if pathlib.Path(file_name).suffix != "":
-        print(
-            f"Sorry, there appears to be an extension in your 'file_name' parameter for the {write_plot_to_file.__name__} function"
-        )
-        exit(1)
-
-    file_name = get_experiment_title(file_path)
-    file_name = file_name.lower()
-    file_name = file_name.replace(" ", "_")
-    file_name = file_name.replace("-", "_")
-    file_name += ".html"
-
-    output_path: pathlib.Path = file_path.joinpath(file_name)
-    plot.write_html(output_path)
-
-
 def main() -> None:
     try:
         input_file = pathlib.Path(sys.argv[1])
@@ -462,15 +325,12 @@ def main() -> None:
         if input_file.match("proteinGroups.txt"):
             data_frame = create_intensity_dataframe(input_file=input_file)
             data_frame = calculate_statistics(intensities=data_frame)
-            data_frame = filter_variation(data_frame)
-            # data_frame = filter_clinically_relevant(data_frame)
+            data_frame = filter_values.filter_variation(data_frame)
+            # data_frame = fileter_values.filter_clinically_relevant(data_frame)
 
             plot = make_plot(intensities=data_frame, input_data=input_file)
-            write_intensities(data_frame=data_frame, output_path=output_path)
-            write_plot_to_file(
-                plot,
-                output_path,
-            )
+            write_data.write_intensities(data_frame=data_frame, output_path=output_path)
+            write_data.write_plot_to_file(plot, output_path)
 
         else:
             print(
