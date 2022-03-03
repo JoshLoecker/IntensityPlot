@@ -5,7 +5,6 @@ import file_operations
 
 import csv
 import thefuzz as fuzzy_search
-import numpy as np
 import pandas as pd
 import pathlib
 import plotly
@@ -29,6 +28,7 @@ def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
     :return: A pandas dataframe
     """
     intensities: dict = {
+        "protein_id": [],
         "gene_name": [],
         "protein_name": [],
         "dried_1": [],
@@ -47,6 +47,7 @@ def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
 
         for line in reader:
             # Convert values to an integer, as the specifics of a float are not required
+            intensities["protein_id"].append(line[1])
             intensities["gene_name"].append(line[6])
             intensities["protein_name"].append(line[5])
             intensities["dried_1"].append(int(float(line[51])))
@@ -85,7 +86,7 @@ def make_plot(
     ]
 
     # Calculate information required to create a trendline trace
-    trendline = linear_regression.CalculateLinearRegression(plot_df)
+    trendline = statistics.CalculateLinearRegression(plot_df)
 
     # Create the plot
     plot = go.Figure()
@@ -245,7 +246,7 @@ def main() -> None:
             data_frame = create_intensity_dataframe(input_file=input_file)
             data_frame = statistics.calculate_statistics(intensities=data_frame)
             data_frame = filter_values.filter_variation(data_frame)
-            # data_frame = fileter_values.filter_clinically_relevant(data_frame)
+            # data_frame = filter_values.filter_clinically_relevant(data_frame)
 
             plot = make_plot(intensities=data_frame, input_data=input_file)
             file_operations.write_intensities(
