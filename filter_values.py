@@ -1,3 +1,5 @@
+import csv
+import pathlib
 import pandas as pd
 
 
@@ -36,6 +38,21 @@ def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
     :param data_frame: The incoming dataframe
     :return: A new dataframe containing the intersect of MaxQuant proteins and clinically relevant proteins
     """
-    intersect_df: pd.DataFrame = pd.DataFrame()
+    intersection: pd.DataFrame = pd.DataFrame()
 
-    return intersect_df
+    with open("./clinically_relevant.tsv") as i_stream:
+        reader = csv.reader(i_stream, delimiter="\t")
+        header = next(reader)
+        for line in reader:
+            protein = line[0]
+            protein_id = line[1]
+
+    return intersection
+
+
+if __name__ == "__main__":
+    import main
+
+    input_file = pathlib.Path("./data/c18/sdc/proteinGroups.txt")
+    data_frame: pd.DataFrame = main.create_intensity_dataframe(input_file)
+    filter_clinically_relevant(data_frame)
