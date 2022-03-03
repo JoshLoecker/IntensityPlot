@@ -1,6 +1,6 @@
 import clinically_relevant
 import filter_values
-import linear_regression
+import statistics
 import file_operations
 
 import csv
@@ -57,54 +57,6 @@ def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
             intensities["liquid_3"].append(int(float(line[56])))
 
     return pd.DataFrame(intensities)
-
-
-def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
-    """
-    This function will calculate various statistics required for graph creation
-
-    :param intensities: The pandas dataframe containing various intensity values for liquid/dried experiments
-    :return: A pandas dataframe with additional statistics
-    """
-    # Calculate averages
-    intensities["dried_average"] = round(
-        intensities[["dried_1", "dried_2", "dried_3"]].mean(axis=1), 4
-    )
-    intensities["liquid_average"] = round(
-        intensities[["liquid_1", "liquid_2", "liquid_3"]].mean(axis=1), 4
-    )
-
-    # Calculate standard deviations
-    intensities["dried_std_dev"] = round(
-        intensities[["dried_1", "dried_2", "dried_3"]].std(axis=1), 4
-    )
-    intensities["liquid_std_dev"] = round(
-        intensities[["liquid_1", "liquid_2", "liquid_3"]].std(axis=1), 4
-    )
-
-    # Calculate coefficient of variation
-    intensities["dried_variation"] = round(
-        (intensities["dried_std_dev"] / intensities["dried_average"]) * 100, 4
-    )
-    intensities["liquid_variation"] = round(
-        intensities["liquid_std_dev"] / intensities["liquid_average"] * 100, 4
-    )
-
-    # Calculate ratio of dried:liquid
-    intensities["dried_liquid_ratio"] = round(
-        intensities["dried_average"] / intensities["liquid_average"], 4
-    )
-
-    # Calculate size of bubble for bubble graph
-    intensities["average_variation"] = round(
-        intensities[["dried_variation", "liquid_variation"]].mean(axis=1), 4
-    )
-
-    # Some averages are 0, and dividing by 0 = NaN
-    # Fix this by resetting values to 0
-    intensities = intensities.fillna(0)
-
-    return intensities
 
 
 def make_plot(
@@ -291,7 +243,7 @@ def main() -> None:
 
         if input_file.match("proteinGroups.txt"):
             data_frame = create_intensity_dataframe(input_file=input_file)
-            data_frame = calculate_statistics(intensities=data_frame)
+            data_frame = statistics.calculate_statistics(intensities=data_frame)
             data_frame = filter_values.filter_variation(data_frame)
             # data_frame = fileter_values.filter_clinically_relevant(data_frame)
 
