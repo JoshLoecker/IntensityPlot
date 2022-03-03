@@ -7,10 +7,11 @@ import pathlib
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+from sklearn.linear_model import LinearRegression
 import sys
 
 
-class RegressionData:
+class RegressionRetrieval:
     """
     This is a simple class to retrieve regression information from a plotly express graph
     This was created to ensure it was easy to retrieve the requested value correctly
@@ -24,11 +25,13 @@ class RegressionData:
         https://plotly.com/python/linear-fits/
     """
 
-    def __init__(self, plot: plotly.graph_objects.Figure):
+    def __init__(self, data_frame: pd.DataFrame, plot: plotly.graph_objects.Figure):
+
         # These values are hidden from public access using a double underscore
         self.__regression_data: pd.DataFrame = px.get_trendline_results(plot)
         self.__regression_model = self.__regression_data["px_fit_results"][0]
         self.__summary = self.__regression_model.summary()
+        self.__data_frame = data_frame
 
         self.y_intercept: float = self.__regression_model.params[0]
         self.slope: float = self.__regression_model.params[1]
@@ -133,9 +136,8 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
         intensities["dried_average"] / intensities["liquid_average"], 4
     )
 
-    # Calculate size of bubble for bubble graph
     intensities["plot_marker_size"] = round(
-        intensities[["dried_variation", "liquid_variation"]].mean(axis=1), 4
+        (intensities["dried_variation"] + intensities["liquid_variation"]) / 2, 4
     )
 
     # Some averages are 0, and dividing by 0 = NaN
@@ -257,14 +259,16 @@ def make_plot(
             plot_df["plot_marker_size"],
         ],
     )
-    regression_calculation = RegressionData(plot)
 
-    # Add title and axis labels
+    # Retrieve regression data
+    regression_calculation = RegressionRetrieval(plot_df, plot)
+
+    # Add axis labels
     plot.update_layout(title=get_experiment_title(input_data))
     plot.update_xaxes(title_text="Dried Average Intensity")
     plot.update_yaxes(title_text="Liquid Average Intensity")
 
-    # Set the hover text
+    # Add hover template
     plot.update_traces(
         hovertemplate="<br>".join(
             [
@@ -273,7 +277,7 @@ def make_plot(
                 "Liquid Average: %{y}%",
                 "Average Variation: ± %{customdata[1]}%",
             ]
-        ),
+        )
     )
 
     # Add linear regression equation as an annotation
