@@ -100,7 +100,7 @@ def make_plot(
                 size=plot_df["dried_variation"].values.tolist(),
                 sizemode="area",
                 # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
-                sizeref=2.0 * plot_df["dried_variation"].max() / (40.0**2),
+                sizeref=2.0 * plot_df["average_variation"].max() / (40.0**2),
                 sizemin=4,
             ),
         )
@@ -116,7 +116,7 @@ def make_plot(
                 size=plot_df["liquid_variation"].values.tolist(),
                 sizemode="area",
                 # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
-                sizeref=2.0 * plot_df["liquid_variation"].max() / (40.0**2),
+                sizeref=2.0 * plot_df["average_variation"].max() / (40.0**2),
                 sizemin=4,
             ),
         )
@@ -157,8 +157,8 @@ def make_plot(
         selector={"mode": "markers"},
         name="Variation",
         mode="markers",
-        error_x=dict(type="data", array=plot_df["dried_variation"], visible=True),
-        error_y=dict(type="data", array=plot_df["liquid_variation"], visible=True),
+        error_x=dict(type="data", array=plot_df["liquid_variation"], visible=True),
+        error_y=dict(type="data", array=plot_df["dried_variation"], visible=True),
         customdata=plot_df[
             [
                 "gene_name",
@@ -169,8 +169,8 @@ def make_plot(
         hovertemplate="<br>".join(
             [
                 "Gene Name: %{customdata[0]}",
-                "Dried Average: %{x}%",
-                "Liquid Average: %{y}%",
+                "Dried Average: %{y}%",
+                "Liquid Average: %{x}%",
                 "Average Variation: ± %{customdata[2]}%",
                 "<extra></extra>",
             ]
@@ -210,13 +210,13 @@ def make_plot(
 
     # Add title and axis labels
     plot.update_layout(title=file_operations.get_experiment_title(input_data))
-    plot.update_xaxes(title_text="Dried Average Intensity")
-    plot.update_yaxes(title_text="Liquid Average Intensity")
+    plot.update_xaxes(title_text="Liquid Average Intensity")
+    plot.update_yaxes(title_text="Dried Average Intensity")
 
     # Add linear regression equation as an annotation
     regression_equation = "<br>".join(
         [
-            f"(Liquid Average) = {trendline.slope:.3f} * (Dried Average) + {trendline.y_intercept:.3e}",
+            f"(Dried Average) = {trendline.slope:.3f} * (Liquid Average) + {trendline.y_intercept:.3e}",
             f"R² = {trendline.r_squared:.3f}",
             f"Unique proteins identified = {len(plot_df['gene_name'].values)}",
         ]
@@ -231,8 +231,7 @@ def make_plot(
         align="right",
     )
 
-    # Make buttons to modify graph
-    plot.update_layout()
+    print(plot_df.loc[plot_df["gene_name"] == "F10"])
 
     return plot
 
