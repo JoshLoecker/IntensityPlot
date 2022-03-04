@@ -76,6 +76,7 @@ def make_plot(
     plot_df: pd.DataFrame = intensities[
         [
             "gene_name",
+            "protein_id",
             "dried_average",
             "liquid_average",
             "dried_variation",
@@ -92,11 +93,11 @@ def make_plot(
     # Bubble size is set to dried variation
     plot.add_trace(
         go.Scatter(
-            x=plot_df["dried_average"],
-            y=plot_df["liquid_average"],
+            x=plot_df["liquid_average"],
+            y=plot_df["dried_average"],
             mode="markers",
             marker=dict(
-                size=plot_df["dried_variation"],
+                size=plot_df["dried_variation"].values.tolist(),
                 sizemode="area",
                 # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
                 sizeref=2.0 * plot_df["dried_variation"].max() / (40.0**2),
@@ -108,11 +109,11 @@ def make_plot(
     plot.add_trace(
         go.Scatter(
             visible=False,
-            x=plot_df["dried_average"],
-            y=plot_df["liquid_average"],
+            x=plot_df["liquid_average"],
+            y=plot_df["dried_average"],
             mode="markers",
             marker=dict(
-                size=plot_df["liquid_variation"],
+                size=plot_df["liquid_variation"].values.tolist(),
                 sizemode="area",
                 # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
                 sizeref=2.0 * plot_df["liquid_variation"].max() / (40.0**2),
@@ -124,11 +125,11 @@ def make_plot(
     plot.add_trace(
         go.Scatter(
             visible=False,
-            x=plot_df["dried_average"],
-            y=plot_df["liquid_average"],
+            x=plot_df["liquid_average"],
+            y=plot_df["dried_average"],
             mode="markers",
             marker=dict(
-                size=plot_df["average_variation"],
+                size=plot_df["average_variation"].values.tolist(),
                 sizemode="area",
                 # Calculate max size of bubble. From: https://plotly.com/python/bubble-charts/#scaling-the-size-of-bubble-charts
                 sizeref=2.0 * plot_df["average_variation"].max() / (40.0**2),
@@ -138,9 +139,10 @@ def make_plot(
     )
 
     # Add trendline
+    # Exclude Albumin from this calculation because it is a very large outlier
     plot.add_trace(
         go.Scatter(
-            x=plot_df["dried_average"],
+            x=plot_df["liquid_average"].loc[plot_df["gene_name"] != "ALB"],
             y=trendline.linear_fit,
             name="Linear Regression",
             mode="lines",
@@ -160,8 +162,7 @@ def make_plot(
         customdata=plot_df[
             [
                 "gene_name",
-                "dried_variation",
-                "liquid_variation",
+                "protein_id",
                 "average_variation",
             ]
         ],
@@ -170,7 +171,7 @@ def make_plot(
                 "Gene Name: %{customdata[0]}",
                 "Dried Average: %{x}%",
                 "Liquid Average: %{y}%",
-                "Average Variation: ± %{customdata[3]}%",
+                "Average Variation: ± %{customdata[2]}%",
                 "<extra></extra>",
             ]
         ),
@@ -245,7 +246,7 @@ def main() -> None:
             data_frame = create_intensity_dataframe(input_file=input_file)
             data_frame = statistics.calculate_statistics(intensities=data_frame)
             data_frame = filter_values.filter_variation(data_frame)
-            # data_frame = filter_values.filter_clinically_relevant(data_frame)
+            data_frame = filter_values.filter_clinically_relevant(data_frame)
 
             plot = make_plot(intensities=data_frame, input_data=input_file)
             file_operations.write_intensities(
