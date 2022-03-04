@@ -1,4 +1,3 @@
-import clinically_relevant
 import filter_values
 import statistics
 import file_operations
