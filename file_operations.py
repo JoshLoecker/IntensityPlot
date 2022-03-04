@@ -39,7 +39,7 @@ def get_experiment_title(file_path: pathlib.Path) -> str:
 def write_intensities(
     data_frame: pd.DataFrame,
     output_path: pathlib.Path,
-    file_name: str = "intensityPlot.csv",
+    file_name: str = "intensityPlot.tsv",
 ) -> None:
     """
     This function will write the input dataframe to the specified output path and file name
@@ -50,7 +50,7 @@ def write_intensities(
     :return: None
     """
     output_file: pathlib.Path = pathlib.Path(output_path, file_name)
-    data_frame.to_csv(output_file, index=False)
+    data_frame.to_csv(output_file, index=False, sep="\t")
 
 
 def write_plot_to_file(
