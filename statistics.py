@@ -13,8 +13,11 @@ class CalculateLinearRegression:
         :return:
         """
 
-        x_values = np.array(data_frame["dried_average"]).reshape((-1, 1))
-        y_values = np.array(data_frame["liquid_average"])
+        # Remove albumin from our calculations, it is a large outlier
+        data_frame = data_frame[data_frame["gene_name"] != "ALB"]
+
+        x_values = np.array(data_frame["liquid_average"]).reshape((-1, 1))
+        y_values = np.array(data_frame["dried_average"])
 
         self.__linear_regression = LinearRegression()
         self.__linear_regression.fit(
