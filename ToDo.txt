@@ -1,4 +1,8 @@
-Listed hardest to easiest
-
-Find all clinically relavent proteins
 Determine expected concentration in plasma
+    - Use column "Concentration according to Plasma Proteome Database [log10(pg/ml)]" from "extra_info/ProteinPlasmaConcentrationData.xlsx" file
+
+Variation (y) vs Abundance rank (x) graph
+    - Image is in "extra_info/PlasmaProteomics2.pdf" file
+
+Write Excel tables
+    - Template is under extra_info folder
