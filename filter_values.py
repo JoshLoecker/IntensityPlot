@@ -2,6 +2,7 @@ import csv
 import pathlib
 import pandas as pd
 
+
 class _GatherProteinData:
     def __init__(self):
         self.clinically_relevant_proteins: list[str] = []
