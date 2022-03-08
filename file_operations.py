@@ -5,7 +5,7 @@ import pathlib
 import plotly
 
 
-def get_experiment_title(args: command_line_args.ArgParse) -> str:
+def get_experiment_title(args: arg_parse.ArgParse) -> str:
     """
     This function is used to determine what type of experiment we are dealing with
 
@@ -40,7 +40,7 @@ def get_experiment_title(args: command_line_args.ArgParse) -> str:
     return title
 
 
-def get_output_file_name(args: command_line_args.ArgParse):
+def get_output_file_name(args: arg_parse.ArgParse):
     experiment_title = get_experiment_title(args)
     print(experiment_title)
 
@@ -64,13 +64,13 @@ def write_intensities(
 
 def write_plot_to_file(
     plot: plotly.graph_objects.Figure,
-    args: command_line_args.ArgParse,
+    args: arg_parse.ArgParse,
 ):
     """
     This function will simply handle writing the plotly graph to an output file
 
     :param plot: The plotly graph
-    :param args: The arguments retrieved from the command line using command_line_args
+    :param args: The arguments retrieved from the command line using arg_parse
     :return: None
     """
 
