@@ -1,3 +1,4 @@
+import arg_parse
 import filter_values
 import statistics
 import file_operations
@@ -61,46 +62,33 @@ def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
 
 
 def main() -> None:
-    try:
-        input_file = pathlib.Path(sys.argv[1])
-        output_path = input_file.parent
+    args = arg_parse.ArgParse()
+    args = args.args
 
-        if input_file.match("proteinGroups.txt"):
-            liquid_vs_dried_intensity = create_intensity_dataframe(
-                input_file=input_file
-            )
-            liquid_vs_dried_intensity = statistics.calculate_statistics(
-                intensities=liquid_vs_dried_intensity
-            )
-            liquid_vs_dried_intensity = filter_values.filter_variation(
-                liquid_vs_dried_intensity
-            )
-            liquid_vs_dried_intensity = filter_values.filter_clinically_relevant(
-                liquid_vs_dried_intensity
-            )
+    input_file = args.input
+    output_path = args.output
 
-            liquid_vs_dried_intensity_plot = (
-                plot_generation.liquid_intensity_vs_dried_intensity(
-                    intensities=liquid_vs_dried_intensity, input_data=input_file
-                )
-            )
+    liquid_vs_dried_intensity = create_intensity_dataframe(input_file=input_file)
+    liquid_vs_dried_intensity = statistics.calculate_statistics(
+        intensities=liquid_vs_dried_intensity
+    )
+    liquid_vs_dried_intensity = filter_values.filter_variation(
+        liquid_vs_dried_intensity
+    )
+    liquid_vs_dried_intensity = filter_values.filter_clinically_relevant(
+        liquid_vs_dried_intensity
+    )
 
-            file_operations.write_intensities(
-                data_frame=liquid_vs_dried_intensity, output_path=output_path
-            )
-            file_operations.write_plot_to_file(
-                liquid_vs_dried_intensity_plot, output_path
-            )
+    liquid_vs_dried_intensity_plot = (
+        plot_generation.liquid_intensity_vs_dried_intensity(
+            intensities=liquid_vs_dried_intensity, args=args
+        )
+    )
 
-        else:
-            print(
-                "You have not passed in the 'proteinGroups' text file. Please try again."
-            )
-            print("Make sure the file is named 'proteinGroups.txt'")
-
-    except IndexError:
-        print("You must pass in a file path as the first argument. Please try again")
-        exit(1)
+    file_operations.write_intensities(
+        data_frame=liquid_vs_dried_intensity, output_path=output_path
+    )
+    file_operations.write_plot_to_file(plot=liquid_vs_dried_intensity_plot, args=args)
 
 
 if __name__ == "__main__":
