@@ -5,8 +5,8 @@ import pandas as pd
 
 class _GatherProteinData:
     def __init__(self):
-        self.clinically_relevant_proteins: list[str] = []
-        self.clinically_relevant_protein_ids: list[str] = []
+        self.__clinically_relevant_proteins: list[str] = []
+        self.__clinically_relevant_protein_ids: list[str] = []
 
         # Gather clinically relevant proteins and protein IDS
         with open("clinically_relevant.tsv", "r") as i_stream:
@@ -14,8 +14,16 @@ class _GatherProteinData:
             next(reader)
 
             for line in reader:
-                self.clinically_relevant_proteins.append(line[0])
-                self.clinically_relevant_protein_ids.append(line[1])
+                self.__clinically_relevant_proteins.append(line[0])
+                self.__clinically_relevant_protein_ids.append(line[1])
+
+    @property
+    def clinically_relevant_proteins(self):
+        return self.__clinically_relevant_proteins
+
+    @property
+    def clinically_relevant_protein_ids(self):
+        return self.__clinically_relevant_protein_ids
 
 
 def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.DataFrame:
