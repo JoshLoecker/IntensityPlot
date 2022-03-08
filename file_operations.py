@@ -1,39 +1,48 @@
+import command_line_args
+
 import pandas as pd
 import pathlib
 import plotly
 
 
-def get_experiment_title(file_path: pathlib.Path) -> str:
+def get_experiment_title(args: command_line_args.ArgParse) -> str:
     """
     This function is used to determine what type of experiment we are dealing with
 
     It is very specific to the testing data currently available
     This function should most likely be included to accept a parameter (or read from a configuration file) to determine the experiment name
 
-    :param file_path: The file path where the proteinGroups.txt file is located
+    :param args: A commandline_args.ArgParse type that contains various information gained from the command line
     :return: A string containing the name of the experiment
     """
-    str_file_path: str = str(file_path).lower()
-    title: str = ""
+    method = str(args.method).lower()
+    experiment = str(args.experiment).lower()
+
+    title = ""
 
     # Found "direct" in the file path
-    if str_file_path.find("direct") != -1:
+    if method == "direct":
         title += "Direct-"
     # Found "c18" in the file path
-    elif str_file_path.find("c18") != -1:
+    elif method == "c18":
         title += "C18-"
 
     # Found "urea" in the file path
-    if str_file_path.find("urea") != -1:
+    if experiment == "urea":
         title += "Urea "
     # Found "sdc" in the file path
-    elif str_file_path.find("sdc") != -1:
+    elif experiment == "sdc":
         title += "SDC "
 
     # Always append 'Experiment'. This is in case we could not find one of the specified cases above
     title += "Experiment"
 
     return title
+
+
+def get_output_file_name(args: command_line_args.ArgParse):
+    experiment_title = get_experiment_title(args)
+    print(experiment_title)
 
 
 def write_intensities(
@@ -55,29 +64,23 @@ def write_intensities(
 
 def write_plot_to_file(
     plot: plotly.graph_objects.Figure,
-    file_path: pathlib.Path,
-    file_name: str = "intensityPlot",
+    args: command_line_args.ArgParse,
 ):
     """
     This function will simply handle writing the plotly graph to an output file
 
     :param plot: The plotly graph
-    :param file_path: The path/folder to save the graph
-    :param file_name: The name of the output file, EXCLUDING the file extension
+    :param args: The arguments retrieved from the command line using command_line_args
     :return: None
     """
-    # If an extension is found in file_name
-    if pathlib.Path(file_name).suffix != "":
-        print(
-            f"Sorry, there appears to be an extension in your 'file_name' parameter for the {write_plot_to_file.__name__} function"
-        )
-        exit(1)
 
-    file_name = get_experiment_title(file_path)
+    file_name = get_experiment_title(args)
     file_name = file_name.lower()
     file_name = file_name.replace(" ", "_")
     file_name = file_name.replace("-", "_")
     file_name += ".html"
 
-    output_path: pathlib.Path = file_path.joinpath(file_name)
-    plot.write_html(output_path)
+    output_path = pathlib.Path(args.output)
+    output_file = output_path.joinpath(file_name)
+
+    plot.write_html(output_file)
