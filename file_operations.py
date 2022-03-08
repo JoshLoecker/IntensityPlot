@@ -4,6 +4,8 @@ import pandas as pd
 import pathlib
 import plotly
 
+import excel_writer
+
 
 def get_experiment_title(args: arg_parse.ArgParse) -> str:
     """
@@ -40,26 +42,28 @@ def get_experiment_title(args: arg_parse.ArgParse) -> str:
     return title
 
 
-def get_output_file_name(args: arg_parse.ArgParse):
-    experiment_title = get_experiment_title(args)
-    print(experiment_title)
+def get_output_file_name(args: arg_parse.ArgParse) -> str:
+    file_name = get_experiment_title(args)
+
+    file_name = file_name.lower()
+    file_name = file_name.replace(" ", "_")
+    file_name = file_name.replace("-", "_")
+
+    return file_name
 
 
-def write_intensities(
-    data_frame: pd.DataFrame,
-    output_path: pathlib.Path,
-    file_name: str = "intensityPlot.tsv",
-) -> None:
-    """
-    This function will write the input dataframe to the specified output path and file name
+def write_excel_file(data_frame: pd.DataFrame, args: arg_parse.ArgParse):
+    output_file = f"{get_output_file_name(args)}.xlsx"
+    output_directory = pathlib.Path(str(args.output))
+    output_path = output_directory.joinpath(output_file)
 
-    :param data_frame: The data frame to write
-    :param output_path: The path/folder to write the dataframe to
-    :param file_name: The name for the file
-    :return: None
-    """
-    output_file: pathlib.Path = pathlib.Path(output_path, file_name)
-    data_frame.to_csv(output_file, index=False, sep="\t")
+    print(output_path)
+
+    write_excel = excel_writer.PlasmaTable(
+        sheet_title="All Proteins",
+        is_clinically_relevant=False,
+        workbook_save_path=output_path,
+    )
 
 
 def write_plot_to_file(
@@ -74,10 +78,7 @@ def write_plot_to_file(
     :return: None
     """
 
-    file_name = get_experiment_title(args)
-    file_name = file_name.lower()
-    file_name = file_name.replace(" ", "_")
-    file_name = file_name.replace("-", "_")
+    file_name = get_output_file_name(args)
     file_name += ".html"
 
     output_path = pathlib.Path(args.output)
