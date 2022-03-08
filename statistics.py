@@ -27,9 +27,21 @@ class CalculateLinearRegression:
 
         self.linear_fit: np.ndarray = self.__linear_regression.predict(x_values)
 
-        self.slope = float(self.__linear_regression.coef_)
-        self.y_intercept = float(self.__linear_regression.intercept_)
-        self.r_squared = float(self.__linear_regression.score(X=x_values, y=y_values))
+        self.__calculate_r_squared = float(
+            self.__linear_regression.score(X=x_values, y=y_values)
+        )
+
+    @property
+    def slope(self):
+        return float(self.__linear_regression.coef_)
+
+    @property
+    def y_intercept(self):
+        return float(self.__linear_regression.intercept_)
+
+    @property
+    def r_squared(self):
+        return self.__calculate_r_squared
 
 
 def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
