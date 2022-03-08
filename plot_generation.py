@@ -1,3 +1,5 @@
+import arg_parse
+import file_operations
 import statistics
 
 import pandas as pd
@@ -12,18 +14,29 @@ def abundance_vs_lfq_intensity():
     Abundnace will be on the x-axis, and LFQ Intensity will be on the y-axis
     :return:
     """
+    raise NotImplementedError
+
+
+# Variation (y) vs Abundance rank (x) graph
+def abundance_vs_variation():
+    """
+    This function will be responsible for creating an Abundance vs Variation plot
+    Abundance will be on the x-axis and Variation will be on the y-axis
+    :return:
+    """
+    raise NotImplementedError
 
 
 def liquid_intensity_vs_dried_intensity(
     intensities: pd.DataFrame,
-    input_data: pathlib.Path,
+    args: arg_parse.ArgParse,
 ) -> plotly.graph_objects.Figure:
     """
     This function is responsible for creating the final Plotly graph
 
 
     :param intensities: The dataframe containing intensity values from MaxQuant
-    :param input_data: The path for the input data
+    :param args: Command line arguments retrieved from arg_parse.py
     :return: A plotly.graph_objects.Figure
     """
 
@@ -164,7 +177,7 @@ def liquid_intensity_vs_dried_intensity(
     )
 
     # Add title and axis labels
-    plot.update_layout(title=file_operations.get_experiment_title(input_data))
+    plot.update_layout(title=file_operations.get_experiment_title(args))
     plot.update_xaxes(title_text="Liquid Average Intensity")
     plot.update_yaxes(title_text="Dried Average Intensity")
 
@@ -185,7 +198,5 @@ def liquid_intensity_vs_dried_intensity(
         yref="paper",
         align="right",
     )
-
-    print(plot_df.loc[plot_df["gene_name"] == "F10"])
 
     return plot
