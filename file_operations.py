@@ -1,13 +1,9 @@
-import arg_parse
-
-import pandas as pd
+import argparse
 import pathlib
 import plotly
 
-import excel_writer
 
-
-def get_experiment_title(args: arg_parse.ArgParse) -> str:
+def get_experiment_title(args: argparse.Namespace) -> str:
     """
     This function is used to determine what type of experiment we are dealing with
 
@@ -42,7 +38,7 @@ def get_experiment_title(args: arg_parse.ArgParse) -> str:
     return title
 
 
-def get_output_file_name(args: arg_parse.ArgParse) -> str:
+def get_output_file_name(args: argparse.Namespace) -> str:
     file_name = get_experiment_title(args)
 
     file_name = file_name.lower()
@@ -52,23 +48,9 @@ def get_output_file_name(args: arg_parse.ArgParse) -> str:
     return file_name
 
 
-def write_excel_file(data_frame: pd.DataFrame, args: arg_parse.ArgParse):
-    output_file = f"{get_output_file_name(args)}.xlsx"
-    output_directory = pathlib.Path(str(args.output))
-    output_path = output_directory.joinpath(output_file)
-
-    print(output_path)
-
-    write_excel = excel_writer.PlasmaTable(
-        sheet_title="All Proteins",
-        is_clinically_relevant=False,
-        workbook_save_path=output_path,
-    )
-
-
 def write_plot_to_file(
     plot: plotly.graph_objects.Figure,
-    args: arg_parse.ArgParse,
+    args: argparse.Namespace,
 ):
     """
     This function will simply handle writing the plotly graph to an output file
@@ -81,7 +63,8 @@ def write_plot_to_file(
     file_name = get_output_file_name(args)
     file_name += ".html"
 
-    output_path = pathlib.Path(args.output)
-    output_file = output_path.joinpath(file_name)
+    # Place the html plot next to the input file
+    output_path = pathlib.Path(args.input).parent
+    output_file_path = output_path.joinpath(file_name)
 
-    plot.write_html(output_file)
+    plot.write_html(output_file_path)

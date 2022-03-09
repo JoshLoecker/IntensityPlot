@@ -1,17 +1,13 @@
 import arg_parse
+import excel_writer
 import filter_values
 import statistics
 import file_operations
 import plot_generation
 
 import csv
-import thefuzz as fuzzy_search
 import pandas as pd
 import pathlib
-import plotly
-import plotly.express as px
-import plotly.graph_objects as go
-import sys
 
 
 def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
@@ -61,34 +57,25 @@ def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
     return pd.DataFrame(intensities)
 
 
-def main() -> None:
+def main():
     args = arg_parse.ArgParse()
     args = args.args
 
-    input_file = args.input
-    output_path = args.output
+    intensities_df = create_intensity_dataframe(input_file=args.input)
+    intensities_df = statistics.calculate_statistics(intensities=intensities_df)
+    intensities_df = filter_values.filter_variation(intensities_df)
+    intensities_df = filter_values.find_clinically_relevant(intensities_df)
 
-    liquid_vs_dried_intensity = create_intensity_dataframe(input_file=input_file)
-    liquid_vs_dried_intensity = statistics.calculate_statistics(
-        intensities=liquid_vs_dried_intensity
-    )
-    liquid_vs_dried_intensity = filter_values.filter_variation(
-        liquid_vs_dried_intensity
-    )
-    liquid_vs_dried_intensity = filter_values.filter_clinically_relevant(
-        liquid_vs_dried_intensity
+    clinically_relevant_plot = plot_generation.liquid_intensity_vs_dried_intensity(
+        intensities=intensities_df, args=args
     )
 
-    liquid_vs_dried_intensity_plot = (
-        plot_generation.liquid_intensity_vs_dried_intensity(
-            intensities=liquid_vs_dried_intensity, args=args
-        )
-    )
+    file_operations.write_plot_to_file(plot=clinically_relevant_plot, args=args)
 
-    file_operations.write_intensities(
-        data_frame=liquid_vs_dried_intensity, output_path=output_path
+    # Write all proteins to excel file (i.e., write statistics_df)
+    excel_writer.PlasmaTable(
+        data_frame=intensities_df, args=args, workbook_save_path=args.excel
     )
-    file_operations.write_plot_to_file(plot=liquid_vs_dried_intensity_plot, args=args)
 
 
 if __name__ == "__main__":

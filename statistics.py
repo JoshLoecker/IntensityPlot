@@ -32,15 +32,15 @@ class CalculateLinearRegression:
         )
 
     @property
-    def slope(self):
+    def slope(self) -> float:
         return float(self.__linear_regression.coef_)
 
     @property
-    def y_intercept(self):
+    def y_intercept(self) -> float:
         return float(self.__linear_regression.intercept_)
 
     @property
-    def r_squared(self):
+    def r_squared(self) -> float:
         return self.__calculate_r_squared
 
 
@@ -88,5 +88,6 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
     # Some averages are 0, and dividing by 0 = NaN
     # Fix this by resetting values to 0
     intensities = intensities.fillna(0)
+    intensities.reset_index(drop=True, inplace=True)
 
     return intensities

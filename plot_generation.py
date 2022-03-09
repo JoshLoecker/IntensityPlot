@@ -1,9 +1,7 @@
-import arg_parse
+import argparse
 import file_operations
 import statistics
-
 import pandas as pd
-import pathlib
 import plotly
 import plotly.graph_objects as go
 
@@ -29,7 +27,7 @@ def abundance_vs_variation():
 
 def liquid_intensity_vs_dried_intensity(
     intensities: pd.DataFrame,
-    args: arg_parse.ArgParse,
+    args: argparse.Namespace,
 ) -> plotly.graph_objects.Figure:
     """
     This function is responsible for creating the final Plotly graph
@@ -41,17 +39,20 @@ def liquid_intensity_vs_dried_intensity(
     """
 
     # Create a new dataframe to filter the values we need
-    plot_df: pd.DataFrame = intensities[
-        [
-            "gene_name",
-            "protein_id",
-            "dried_average",
-            "liquid_average",
-            "dried_variation",
-            "liquid_variation",
-            "average_variation",
-        ]
-    ]
+    # Only take clinically relevant proteins
+    plot_df: pd.DataFrame = intensities[intensities["relevant"] == True]
+
+    # plot_df: pd.DataFrame = intensities[
+    #     [
+    #         "gene_name",
+    #         "protein_id",
+    #         "dried_average",
+    #         "liquid_average",
+    #         "dried_variation",
+    #         "liquid_variation",
+    #         "average_variation",
+    #     ]
+    # ]
 
     # Calculate information required to create a trendline trace
     trendline = statistics.CalculateLinearRegression(plot_df)

@@ -1,4 +1,5 @@
 import csv
+import numpy as np
 import pathlib
 import pandas as pd
 
@@ -18,11 +19,11 @@ class _GatherProteinData:
                 self.__clinically_relevant_protein_ids.append(line[1])
 
     @property
-    def clinically_relevant_proteins(self):
+    def clinically_relevant_proteins(self) -> list[str]:
         return self.__clinically_relevant_proteins
 
     @property
-    def clinically_relevant_protein_ids(self):
+    def clinically_relevant_protein_ids(self) -> list[str]:
         return self.__clinically_relevant_protein_ids
 
 
@@ -39,8 +40,7 @@ def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.Da
     :param max_variation: The maximum variation value to accept
     :return: A pandas dataframe containing the filtered values
     """
-
-    return data_frame[
+    data_frame = data_frame[
         (
             (0 < data_frame["dried_variation"])
             & (data_frame["dried_variation"] < max_variation)
@@ -50,6 +50,9 @@ def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.Da
             & (data_frame["liquid_variation"] < max_variation)
         )
     ]
+    data_frame.reset_index(drop=True, inplace=True)
+
+    return data_frame
 
 
 def substring_match(max_quant_ids: str, clinical_ids: str) -> bool:
@@ -74,7 +77,7 @@ def substring_match(max_quant_ids: str, clinical_ids: str) -> bool:
     return False
 
 
-def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
+def find_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
     """
     This function will take an incoming dataframe and filter its protein_name column against clinically relevant proteins from the 'clinicallyRelevant.txt' file
 
@@ -84,9 +87,10 @@ def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
     :return: A new dataframe containing the intersect of MaxQuant proteins and clinically relevant proteins
     """
 
-    clinically_relevant_data_frame = pd.DataFrame(
-        {column: [] for column in data_frame.columns}
-    )
+    # Create a new row to assign relevance for each protein
+    data_frame = data_frame.assign(relevant=np.nan)
+
+    # Gather a list of clinically relevant proteins
     gather_proteins = _GatherProteinData()
     clinically_relevant_protein_ids = gather_proteins.clinically_relevant_protein_ids
 
@@ -94,21 +98,15 @@ def filter_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
 
         for clinical_id in clinically_relevant_protein_ids:
 
-            # search for protein IDS
+            # search for protein IDs
             if substring_match(max_quant_id, clinical_id):
-                clinically_relevant_data_frame = pd.concat(
-                    [clinically_relevant_data_frame, data_frame.iloc[i]],
-                    axis=1,
-                    ignore_index=True,
-                    join="outer",
-                )
+                data_frame.loc[i, "relevant"] = True
+
                 break  # Only care if one ID matches
 
-    clinically_relevant_data_frame = clinically_relevant_data_frame.transpose()
-    clinically_relevant_data_frame.dropna(how="all", inplace=True)
-    clinically_relevant_data_frame.reset_index(drop=True, inplace=True)
-
-    return clinically_relevant_data_frame
+    data_frame["relevant"].replace(np.nan, False, inplace=True)
+    data_frame.reset_index(drop=True, inplace=True)
+    return data_frame
 
 
 if __name__ == "__main__":
@@ -116,4 +114,4 @@ if __name__ == "__main__":
 
     input_file = pathlib.Path("./data/c18/sdc/proteinGroups.txt")
     data_frame: pd.DataFrame = main.create_intensity_dataframe(input_file)
-    filter_clinically_relevant(data_frame)
+    find_clinically_relevant(data_frame)
