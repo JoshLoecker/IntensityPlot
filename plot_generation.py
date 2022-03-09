@@ -40,19 +40,7 @@ def liquid_intensity_vs_dried_intensity(
 
     # Create a new dataframe to filter the values we need
     # Only take clinically relevant proteins
-    plot_df: pd.DataFrame = intensities[intensities["relevant"] == True]
-
-    # plot_df: pd.DataFrame = intensities[
-    #     [
-    #         "gene_name",
-    #         "protein_id",
-    #         "dried_average",
-    #         "liquid_average",
-    #         "dried_variation",
-    #         "liquid_variation",
-    #         "average_variation",
-    #     ]
-    # ]
+    plot_df: pd.DataFrame = intensities[intensities["relevant"]]
 
     # Calculate information required to create a trendline trace
     trendline = statistics.CalculateLinearRegression(plot_df)

@@ -64,18 +64,19 @@ def main():
     intensities_df = create_intensity_dataframe(input_file=args.input)
     intensities_df = statistics.calculate_statistics(intensities=intensities_df)
     intensities_df = filter_values.filter_variation(intensities_df)
-    intensities_df = filter_values.find_clinically_relevant(intensities_df)
+    intensities_df = filter_values.add_clinical_relevance(intensities_df)
+
+    # Sort values based on protein name for easier viewing
+    intensities_df.sort_values("protein_name", ignore_index=True, inplace=True)
+    intensities_df.reset_index(drop=True, inplace=True)
 
     clinically_relevant_plot = plot_generation.liquid_intensity_vs_dried_intensity(
         intensities=intensities_df, args=args
     )
-
     file_operations.write_plot_to_file(plot=clinically_relevant_plot, args=args)
 
     # Write all proteins to excel file (i.e., write statistics_df)
-    excel_writer.PlasmaTable(
-        data_frame=intensities_df, args=args, workbook_save_path=args.excel
-    )
+    excel_writer.PlasmaTable(data_frame=intensities_df, args=args)
 
 
 if __name__ == "__main__":

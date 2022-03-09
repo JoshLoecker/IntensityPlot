@@ -20,10 +20,7 @@ class CalculateLinearRegression:
         y_values = np.array(data_frame["dried_average"])
 
         self.__linear_regression = LinearRegression()
-        self.__linear_regression.fit(
-            X=x_values,
-            y=y_values,
-        )
+        self.__linear_regression.fit(X=x_values, y=y_values)
 
         self.linear_fit: np.ndarray = self.__linear_regression.predict(x_values)
 
@@ -85,9 +82,10 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
         intensities[["dried_variation", "liquid_variation"]].mean(axis=1), 4
     )
 
-    # Some averages are 0, and dividing by 0 = NaN
-    # Fix this by resetting values to 0
-    intensities = intensities.fillna(0)
+    # Some averages are 0 (or inf), and dividing by 0 = NaN
+    # Fix this by resetting values to 0 and changing inf values to zero
+    intensities.fillna(0, inplace=True)
+    intensities[intensities["dried_liquid_ratio"] == np.inf] = 0
     intensities.reset_index(drop=True, inplace=True)
 
     return intensities

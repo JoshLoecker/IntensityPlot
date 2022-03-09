@@ -15,7 +15,6 @@ The following arguments should be parsed
     - '--urea'
 """
 import argparse
-import pathlib
 
 
 class ArgParse:

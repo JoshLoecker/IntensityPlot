@@ -6,8 +6,9 @@ import pandas as pd
 
 class _GatherProteinData:
     def __init__(self):
-        self.__clinically_relevant_proteins: list[str] = []
-        self.__clinically_relevant_protein_ids: list[str] = []
+        self.__clinical_protein_names: list[str] = []
+        self.__clinical_protein_ids: list[str] = []
+        self.__expected_concentration: list[str] = []
 
         # Gather clinically relevant proteins and protein IDS
         with open("clinically_relevant.tsv", "r") as i_stream:
@@ -15,16 +16,21 @@ class _GatherProteinData:
             next(reader)
 
             for line in reader:
-                self.__clinically_relevant_proteins.append(line[0])
-                self.__clinically_relevant_protein_ids.append(line[1])
+                self.__clinical_protein_names.append(line[0])
+                self.__clinical_protein_ids.append(line[1])
+                self.__expected_concentration.append(line[2])
 
     @property
-    def clinically_relevant_proteins(self) -> list[str]:
-        return self.__clinically_relevant_proteins
+    def clinical_protein_names(self) -> list[str]:
+        return self.__clinical_protein_names
 
     @property
-    def clinically_relevant_protein_ids(self) -> list[str]:
-        return self.__clinically_relevant_protein_ids
+    def clinical_protein_ids(self) -> list[str]:
+        return self.__clinical_protein_ids
+
+    @property
+    def expected_concentration(self) -> list[str]:
+        return self.__expected_concentration
 
 
 def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.DataFrame:
@@ -43,11 +49,11 @@ def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.Da
     data_frame = data_frame[
         (
             (0 < data_frame["dried_variation"])
-            & (data_frame["dried_variation"] < max_variation)
+            & (data_frame["dried_variation"] <= max_variation)
         )
         | (
             (0 < data_frame["liquid_variation"])
-            & (data_frame["liquid_variation"] < max_variation)
+            & (data_frame["liquid_variation"] <= max_variation)
         )
     ]
     data_frame.reset_index(drop=True, inplace=True)
@@ -55,7 +61,7 @@ def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.Da
     return data_frame
 
 
-def substring_match(max_quant_ids: str, clinical_ids: str) -> bool:
+def substring_id_match(max_quant_ids: str, clinical_ids: str) -> bool:
     """
     This function is responsible for matching protein ID sets from one row of results
 
@@ -77,35 +83,60 @@ def substring_match(max_quant_ids: str, clinical_ids: str) -> bool:
     return False
 
 
-def find_clinically_relevant(data_frame: pd.DataFrame) -> pd.DataFrame:
+def substring_name_match(max_quant_name: str, clinical_name: str) -> bool:
     """
-    This function will take an incoming dataframe and filter its protein_name column against clinically relevant proteins from the 'clinicallyRelevant.txt' file
+    This function will be responsible for matching proteins by name
+    This function will only be called if matching by protein IDs failed
 
-    Use fuzzywuzzy as a search algorithm? https://pypi.org/project/fuzzywuzzy/
-
-    :param data_frame: The incoming dataframe
-    :return: A new dataframe containing the intersect of MaxQuant proteins and clinically relevant proteins
+    :param max_quant_name: The MaxQuant protein name
+    :param clinical_name: The clinically relevant protein name
+    :return: Boolean stating if proteins match
     """
+    # TODO: Write this function
+    return False
 
-    # Create a new row to assign relevance for each protein
-    data_frame = data_frame.assign(relevant=np.nan)
+
+def add_clinical_relevance(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """
+    This function will add clinically relevant information to the data frame
+
+    It will add a column "relevant" and "expected_concentration"
+    These values will only be modified if the protein is clinically relevant
+
+    Default values:
+    - relevant: False
+    - expected_concentration: -1
+
+    :param data_frame: The incoming data frame
+    :return: pd.DataFrame()
+    """
+    data_frame.assign(relevant=np.nan, expected_concentration=-1)
 
     # Gather a list of clinically relevant proteins
     gather_proteins = _GatherProteinData()
-    clinically_relevant_protein_ids = gather_proteins.clinically_relevant_protein_ids
+    clinical_ids = gather_proteins.clinical_protein_ids
+    clinical_names = gather_proteins.clinical_protein_names
+    expected_concentration = gather_proteins.expected_concentration
 
-    for i, max_quant_id in enumerate(data_frame["protein_id"]):
+    for i, (max_quant_id, max_quant_name) in enumerate(
+        zip(data_frame["protein_id"], data_frame["protein_name"])
+    ):
 
-        for clinical_id in clinically_relevant_protein_ids:
+        for j, (clinical_id, clinical_name) in enumerate(
+            zip(clinical_ids, clinical_names)
+        ):
 
-            # search for protein IDs
-            if substring_match(max_quant_id, clinical_id):
+            if substring_id_match(max_quant_id, clinical_id):
                 data_frame.loc[i, "relevant"] = True
+                data_frame.loc[i, "expected_concentration"] = expected_concentration[i]
+                break
 
-                break  # Only care if one ID matches
+            elif substring_name_match(max_quant_id, clinical_id):
+                data_frame.loc[i, "relevant"] = True
+                data_frame.loc[i, "expected_concentration"] = expected_concentration[i]
+                break
 
     data_frame["relevant"].replace(np.nan, False, inplace=True)
-    data_frame.reset_index(drop=True, inplace=True)
     return data_frame
 
 
@@ -114,4 +145,4 @@ if __name__ == "__main__":
 
     input_file = pathlib.Path("./data/c18/sdc/proteinGroups.txt")
     data_frame: pd.DataFrame = main.create_intensity_dataframe(input_file)
-    find_clinically_relevant(data_frame)
+    add_clinical_relevance(data_frame)

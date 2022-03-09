@@ -2,27 +2,13 @@ import argparse
 import openpyxl
 from openpyxl.styles import Alignment
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.workbook.workbook import Workbook
 import pandas as pd
 import pathlib
 
 
-headings = ["SDC", "SDC-C18", "Urea", "Urea-C18"]
-subheadings = [
-    "Dried\nAverage",
-    "Dried\n%CV",
-    "Liquid\nAverage",
-    "Liquid\n%CV",
-    "D/L\nRatio",
-]
-
-
 class PlasmaTable:
-    def __init__(
-        self,
-        data_frame: pd.DataFrame,
-        args: argparse.Namespace,
-        workbook_save_path: pathlib.Path,
-    ):
+    def __init__(self, data_frame: pd.DataFrame, args: argparse.Namespace):
 
         """
         This class is responsible for writing data to excel files. This will ALWAYS create a new workbook
@@ -31,22 +17,56 @@ class PlasmaTable:
         """
         self.__dataframe = data_frame
         self.__args = args
-        self.__workbook = openpyxl.Workbook()
-
-        # We do not want Sheet. It is easier to make two new sheets
-        del self.__workbook["Sheet"]
-
         self.__clinical_sheetname = "Clinically Relevant Proteins"
         self.__all_proteins_sheetname = "All Proteins"
+        self.__headings = ["SDC", "SDC-C18", "Urea", "Urea-C18"]
+        self.__subheadings = [
+            "Dried\nAverage",
+            "Dried\n%CV",
+            "Liquid\nAverage",
+            "Liquid\n%CV",
+            "D/L\nRatio",
+        ]
 
-        self.__workbook.create_sheet(self.__clinical_sheetname)
-        self.__workbook.create_sheet(self.__all_proteins_sheetname)
+        self.__workbook: Workbook = Workbook()
 
-        self.set_subheading_alignment()
-        self.write_headings()
+        self.__first_set_up = self.set_up_workbook()
         self.write_data()
+        self.write_protein_information()
 
-        self.__workbook.save(workbook_save_path)
+        if self.__first_set_up:
+            # Delete Expected Plasma Concentration column from All Proteins as it is not needed
+            self.__workbook[self.__all_proteins_sheetname].delete_cols(3)
+            self.remerge_cells()
+
+        self.__workbook.save(self.__args.excel)
+
+    def set_up_workbook(self) -> bool:
+        """
+        This function will check if excel file to write to currently exists
+
+        If it does exist, it will return an object of openpyxl.load_workbook()
+        If the file does not exist, it will return a new file of openpyxl.Workbook()
+
+        :return:
+        """
+        if pathlib.Path.exists(pathlib.Path(self.__args.excel)):
+            self.__workbook = openpyxl.load_workbook(self.__args.excel)
+            return False
+        else:
+            self.__workbook = openpyxl.Workbook()
+
+            # We do not want Sheet. It is easier to make two new sheets
+            del self.__workbook["Sheet"]
+
+            # Create our sheets to write to
+            self.__workbook.create_sheet(self.__clinical_sheetname)
+            self.__workbook.create_sheet(self.__all_proteins_sheetname)
+
+            self.set_subheading_alignment()
+            self.write_headings()
+
+            return True
 
     def set_subheading_alignment(self) -> None:
         """
@@ -57,7 +77,7 @@ class PlasmaTable:
         for sheet in self.__workbook.worksheets:
 
             for row in range(1, 3):
-                for col in range(1, 23):
+                for col in range(1, 24):
 
                     sheet.cell(row, col).alignment = Alignment(
                         wrapText=True, horizontal="center", vertical="center"
@@ -84,24 +104,15 @@ class PlasmaTable:
         # Iterate through each sheet in the workbook
         for sheet in self.__workbook.worksheets:
 
-            # We must start the SDC, SDC-C18, Urea, Urea-C18 headings at different locations depending on the workbook
-            # This is because the clinical sheet has an extra "Typical Plasma Conc" column
-            if sheet.title == self.__clinical_sheetname:
-                start_heading = 4
-                end_heading = 19
-            else:
-                start_heading = 3
-                end_heading = 18
-
             # Write values that are consistent between the two sheets
             sheet["A2"] = "Protein\nName"
-            sheet["B2"] = "Protein\nID"
+            sheet["B2"] = "Majority\nProtein\nID"
             sheet.merge_cells("A1:B1")
 
             # Start writing the top-most headings
-            for i, col_num in enumerate(range(start_heading, end_heading + 1, 5)):
+            for i, col_num in enumerate(range(4, 24, 5)):
 
-                sheet.cell(row=1, column=col_num, value=headings[i])
+                sheet.cell(row=1, column=col_num, value=self.__headings[i])
                 sheet.merge_cells(
                     start_row=1, end_row=1, start_column=col_num, end_column=col_num + 4
                 )
@@ -111,63 +122,107 @@ class PlasmaTable:
                     sheet.cell(
                         row=2,
                         column=col_num + sub_col_num,
-                        value=subheadings[sub_col_num],
+                        value=self.__subheadings[sub_col_num],
                     )
 
-    def get_column_to_write(self) -> dict[str, int]:
+    def remerge_cells(self):
         """
-        This function will be responsible for returning the appropriate column number to write intensity values
+        This function will re-merge cells after deleting a column
 
-        For example, if the input data is from SDC-C18, then the following dictionary should be returned:
-            {
-                "dried_average": 3
-                "dried_variation": 4
-                "liquid_average": 5
-                "liquid_variation": 6
-                "dried_liquid_ratio": 7
-            }
+        From: https://stackoverflow.com/questions/58412906
 
-        If the input data is from Urea, the following dictionary will be returned:
-            {
-                "dried_average": 13
-                "dried_variation": 14
-                "liquid_average": 15
-                "liquid_variation": 16
-                "dried_liquid_ratio": 17
-            }
-
-        :return: Dicionary of [str, int]
+        :return: None
         """
-        column_index = {
-            "dried_average": -1,
-            "dried_variation": -1,
-            "liquid_average": -1,
-            "liquid_variation": -1,
-            "dried_liquid_ratio": -1,
-        }
+        delete_index = 3
+        for merged_cells in self.__workbook[self.__all_proteins_sheetname].merged_cells:
+            if delete_index < merged_cells.min_col:
+                merged_cells.shift(col_shift=-1)
+            elif delete_index <= merged_cells.max_col:
+                merged_cells.shrink(right=1)
 
+    def write_protein_information(self) -> None:
         """
-        We only need to do an explicit check for 'direct' and 'urea'
-        This is because if the method is C18, the first if/else statement will set start to 8, and end to 12.
-        
-        If the experiment type is urea, it will add 10 to start and end. If it is of type SDC, the values are already set for these experiments
+        This function will write the name of the protein and the ID into columns 1 and 2, respectively
+
+        On the Clinically Relevant sheet, we will write the expected protein concentration
+
+        :return: None
         """
 
-        if str(self.__args.method).lower() == "direct":
-            start = 3
-            end = 7
-        else:
-            start = 8
-            end = 12
+        columns_to_write: list[str] = [
+            "dried_average",
+            "dried_variation",
+            "liquid_average",
+            "liquid_variation",
+            "dried_liquid_ratio",
+        ]
 
-        if str(self.__args.experiment).lower() == "urea":
-            start += 10
-            end += 10
+        for value in self.__dataframe["dried_average"]:
+            print(value)
+        print("\nHERE\n")
 
-        for i, (key, set_index) in enumerate(zip(column_index, range(start, end + 1))):
-            column_index[key] = set_index
+        for sheet in self.__workbook.worksheets:
+            for i, (protein_id, protein_name, expected_concentration) in enumerate(
+                zip(
+                    self.__dataframe["protein_id"],
+                    self.__dataframe["protein_name"],
+                    self.__dataframe["expected_concentration"],
+                )
+            ):
+                current_row = i + 3
 
-        return column_index
+                sheet.cell(row=current_row, column=1, value=protein_name)
+                sheet.cell(row=current_row, column=2, value=protein_id)
+                sheet.cell(
+                    row=current_row,
+                    column=3,
+                    value=float(expected_concentration),
+                )
+
+                # Write maxquant values to appropriate locations
+                if str(self.__args.method).lower() == "direct":
+                    start_col = 4
+                else:
+                    start_col = 9
+
+                if str(self.__args.experiment).lower() == "urea":
+                    start_col += 10
+
+                if (
+                    not self.__first_set_up
+                    and sheet.title == self.__all_proteins_sheetname
+                ):
+                    start_col -= 1
+
+                for j, column_index in enumerate(range(start_col, start_col + 5)):
+                    if (
+                        self.__dataframe.loc[i, "relevant"]
+                        and sheet.title == self.__clinical_sheetname
+                    ):
+                        # TODO: Only write on correct protein name
+                        # TODO: Only write clinically relevant proteins in clinically relevant protein file
+
+                        # Write to clinically relevant
+                        sheet.cell(
+                            row=current_row,
+                            column=column_index,
+                            value=self.__dataframe[columns_to_write[j]][i],
+                        )
+                    else:
+                        sheet.cell(
+                            row=current_row,
+                            column=column_index,
+                            value=self.__dataframe[columns_to_write[j]][i],
+                        )
+
+                """
+                "Dried
+Average"	"Dried
+%CV"	"Liquid
+Average"	"Liquid
+%CV"	"D/L
+Ratio"
+                """
 
     def write_data(self) -> None:
         """
@@ -177,5 +232,4 @@ class PlasmaTable:
             Otherwise, if the value is false, it should only be written to the All Proteins worksheet
         :return: None
         """
-        column_indices: dict[str, int] = self.get_column_to_write()
-        print(column_indices)
+        pass
