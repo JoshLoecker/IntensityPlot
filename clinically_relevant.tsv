@@ -1,5 +1,6 @@
 protein_name	protein_id	expected_concentration [log10(pg/ml)]
-Acid phosphatase	P15309;Q9NPH0;P13686;Q9BZG2;P11117;P24666;Q6ZNF0	-1
+Acid phosphatase	Q9NPH0;P13686;Q9BZG2;P11117;P24666;Q6ZNF0	-1
+Acid phosphatase	P15309	-1
 IgG	P01857;P01861;P01860;P01859	5.88
 Alanine aminotransferase (ALT or SGPT)	P24298	4.20
 Albumin	P02768	9.2
