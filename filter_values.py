@@ -1,6 +1,7 @@
 import csv
-import numpy as np
 import pathlib
+
+import numpy as np
 import pandas as pd
 
 
@@ -110,7 +111,9 @@ def add_clinical_relevance(data_frame: pd.DataFrame) -> pd.DataFrame:
     :param data_frame: The incoming data frame
     :return: pd.DataFrame()
     """
-    data_frame.assign(relevant=np.nan, expected_concentration=-1)
+    data_frame.assign(
+        relevant=np.nan, expected_concentration=np.nan, clinical_id=np.nan
+    )
 
     # Gather a list of clinically relevant proteins
     gather_proteins = _GatherProteinData()
@@ -126,18 +129,33 @@ def add_clinical_relevance(data_frame: pd.DataFrame) -> pd.DataFrame:
             zip(clinical_ids, clinical_names)
         ):
 
-            if substring_id_match(max_quant_id, clinical_id):
+            if substring_id_match(max_quant_id, clinical_id) or substring_name_match(
+                max_quant_id, clinical_id
+            ):
                 data_frame.loc[i, "relevant"] = True
                 data_frame.loc[i, "expected_concentration"] = expected_concentration[i]
+                data_frame.loc[i, "clinical_id"] = clinical_id
                 break
 
-            elif substring_name_match(max_quant_id, clinical_id):
-                data_frame.loc[i, "relevant"] = True
-                data_frame.loc[i, "expected_concentration"] = expected_concentration[i]
-                break
+    # Must replace NaN values otherwise pandas throws a ValueError when trying to filter
+    data_frame["relevant"].replace(
+        to_replace=np.nan,
+        value=False,
+        inplace=True,
+    )
+    data_frame["clinical_id"].replace(to_replace=np.nan, value="", inplace=True)
 
-    data_frame["relevant"].replace(np.nan, False, inplace=True)
     return data_frame
+
+
+def set_abundance_values():
+    """
+    This function will add an abundance column to clinically relevant proteins
+
+    If the protein does not have an expected concentration, the abundance value can be set to 0
+    :return:
+    """
+    pass
 
 
 if __name__ == "__main__":

@@ -1,21 +1,27 @@
 import argparse
-import openpyxl
-from openpyxl.styles import Alignment
-from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.workbook.workbook import Workbook
-import pandas as pd
 import pathlib
 
+import openpyxl
+import pandas as pd
+from openpyxl.styles import Alignment
+from openpyxl.workbook.workbook import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
+
+# TODO: Refactor this class to be split into two classes
+# Class one: ClinicallyRelevant
+# Class two: AllProteins
 class PlasmaTable:
     def __init__(self, data_frame: pd.DataFrame, args: argparse.Namespace):
 
         """
         This class is responsible for writing data to excel files. This will ALWAYS create a new workbook
 
-        :param workbook_save_path: The path AND file name for the output excel file
+        :param data_frame: The data frame to work
+        :param args: Variables gathered from the command line
         """
         self.__dataframe = data_frame
+        self.__ingested_dataframe = pd.DataFrame()
         self.__args = args
         self.__clinical_sheetname = "Clinically Relevant Proteins"
         self.__all_proteins_sheetname = "All Proteins"
@@ -29,15 +35,18 @@ class PlasmaTable:
         ]
 
         self.__workbook: Workbook = Workbook()
-
         self.__first_set_up = self.set_up_workbook()
-        self.write_data()
-        self.write_protein_information()
 
         if self.__first_set_up:
+            # Only need to write clinical names and IDs on first run
+            self.write_clinical_name_id()
+
             # Delete Expected Plasma Concentration column from All Proteins as it is not needed
             self.__workbook[self.__all_proteins_sheetname].delete_cols(3)
             self.remerge_cells()
+
+        # Write information
+        self.write_clinical_data()
 
         self.__workbook.save(self.__args.excel)
 
@@ -140,6 +149,26 @@ class PlasmaTable:
             elif delete_index <= merged_cells.max_col:
                 merged_cells.shrink(right=1)
 
+    def get_column_write_start(self, sheet_title: str):
+        """
+        This function is responsible for determining which column should be written to when adding data to the excel file
+        :param sheet_title:
+        :return:
+        """
+        # Write maxquant values to appropriate locations
+        if str(self.__args.method).lower() == "direct":
+            start_col = 4
+        else:
+            start_col = 9
+
+        if str(self.__args.experiment).lower() == "urea":
+            start_col += 10
+
+        if not self.__first_set_up and sheet_title == self.__all_proteins_sheetname:
+            start_col -= 1
+
+        return start_col
+
     def write_protein_information(self) -> None:
         """
         This function will write the name of the protein and the ID into columns 1 and 2, respectively
@@ -149,17 +178,13 @@ class PlasmaTable:
         :return: None
         """
 
-        columns_to_write: list[str] = [
+        column_headers: list[str] = [
             "dried_average",
             "dried_variation",
             "liquid_average",
             "liquid_variation",
             "dried_liquid_ratio",
         ]
-
-        for value in self.__dataframe["dried_average"]:
-            print(value)
-        print("\nHERE\n")
 
         for sheet in self.__workbook.worksheets:
             for i, (protein_id, protein_name, expected_concentration) in enumerate(
@@ -171,65 +196,150 @@ class PlasmaTable:
             ):
                 current_row = i + 3
 
-                sheet.cell(row=current_row, column=1, value=protein_name)
-                sheet.cell(row=current_row, column=2, value=protein_id)
                 sheet.cell(
                     row=current_row,
                     column=3,
                     value=float(expected_concentration),
                 )
 
-                # Write maxquant values to appropriate locations
-                if str(self.__args.method).lower() == "direct":
-                    start_col = 4
-                else:
-                    start_col = 9
-
-                if str(self.__args.experiment).lower() == "urea":
-                    start_col += 10
-
-                if (
-                    not self.__first_set_up
-                    and sheet.title == self.__all_proteins_sheetname
-                ):
-                    start_col -= 1
+                start_col = self.get_column_write_start(sheet.title)
 
                 for j, column_index in enumerate(range(start_col, start_col + 5)):
                     if (
                         self.__dataframe.loc[i, "relevant"]
                         and sheet.title == self.__clinical_sheetname
                     ):
-                        # TODO: Only write on correct protein name
-                        # TODO: Only write clinically relevant proteins in clinically relevant protein file
 
                         # Write to clinically relevant
                         sheet.cell(
                             row=current_row,
                             column=column_index,
-                            value=self.__dataframe[columns_to_write[j]][i],
+                            value=self.__dataframe[column_headers[j]][i],
                         )
                     else:
                         sheet.cell(
                             row=current_row,
                             column=column_index,
-                            value=self.__dataframe[columns_to_write[j]][i],
+                            value=self.__dataframe[column_headers[j]][i],
                         )
 
-                """
-                "Dried
-Average"	"Dried
-%CV"	"Liquid
-Average"	"Liquid
-%CV"	"D/L
-Ratio"
-                """
-
-    def write_data(self) -> None:
+    def write_clinical_name_id(self) -> None:
         """
-        This function will be responsible for writing the data contained in the 'dataframe' argument
+        This function will write ONLY the clinicaly name and ID contained in the clinically_relevant.tsv file to columns 1 and 2 in the excel file
+        :return:
+        """
+        clinical_sheet: Worksheet = self.__workbook[self.__clinical_sheetname]
+        clinical_df: pd.DataFrame = pd.read_csv("clinically_relevant.tsv", sep="\t")
+        clinical_df.sort_values(
+            "protein_name",
+            ignore_index=True,
+            inplace=True,
+            # Sort by lowercase. From: https://stackoverflow.com/a/63141564
+            key=lambda col: col.str.lower(),
+        )
 
-        If the 'relevant' column is True then the row should be written to the Clinical worksheet and the All Proteins worksheet
-            Otherwise, if the value is false, it should only be written to the All Proteins worksheet
+        for i, (protein_name, protein_id) in enumerate(
+            zip(clinical_df["protein_name"], clinical_df["protein_id"])
+        ):
+            clinical_sheet.cell(row=i + 3, column=1, value=protein_name)
+            clinical_sheet.cell(row=i + 3, column=2, value=protein_id)
+            # TODO: Write the execpted concentration
+
+    def write_clinical_data(self) -> None:
+        """
+        This function will match clinically relevant MaxQuant data lines located in the Clinically Relevant Proteins file
         :return: None
         """
+        clinical_df: pd.DataFrame = self.__dataframe[
+            self.__dataframe["relevant"]
+        ].reset_index(drop=True)
+
+        clinical_ws: Worksheet = self.__workbook[self.__clinical_sheetname]
+        start_col = self.get_column_write_start(clinical_ws.title)
+
+        column_headers: list[str] = [
+            "dried_average",
+            "dried_variation",
+            "liquid_average",
+            "liquid_variation",
+            "dried_liquid_ratio",
+        ]
+
+        for i, (
+            clinical_id,
+            dried_average,
+            dried_variation,
+            liquid_average,
+            liquid_variation,
+            dried_liquid_ratio,
+        ) in enumerate(
+            zip(
+                clinical_df["clinical_id"],
+                clinical_df["dried_average"],
+                clinical_df["dried_variation"],
+                clinical_df["liquid_average"],
+                clinical_df["liquid_variation"],
+                clinical_df["dried_liquid_ratio"],
+            )
+        ):
+
+            for j, row_contents in enumerate(
+                clinical_ws.iter_rows(min_row=3, min_col=2, max_col=2)
+            ):
+                row_index = j + 3
+                excel_id: str = row_contents[0].value
+
+                if clinical_id == excel_id:
+
+                    clinical_ws.cell(
+                        row=row_index, column=start_col, value=dried_average
+                    )
+                    clinical_ws.cell(
+                        row=row_index, column=start_col + 1, value=dried_variation
+                    )
+                    clinical_ws.cell(
+                        row=row_index, column=start_col + 2, value=liquid_average
+                    )
+                    clinical_ws.cell(
+                        row=row_index, column=start_col + 3, value=liquid_variation
+                    )
+                    clinical_ws.cell(
+                        row=row_index, column=start_col + 4, value=dried_liquid_ratio
+                    )
+
+                    break
+
+    def write_all_protein_name_id(self):
         pass
+
+    def write_all_protein_data(self):
+        pass
+
+    def write_protein_name_ids(self) -> None:
+        """
+        This function will be responsible for writing the information contained under the protein_name and protein_id fields
+
+        It will write all information to the All Proteins sheet
+        It will only write clinically relevant proteins (using the "relevant" field) to the Clinically Relevant Proteins sheet
+        :return: None
+        """
+
+        for sheet in self.__workbook.worksheets:
+            # Get a dataframe containing all clinically relevant proteins
+            if sheet.title == self.__clinical_sheetname:
+                current_df: pd.DataFrame = self.__dataframe[
+                    self.__dataframe["relevant"]
+                ]
+            # Otherwise get a dataframe with all proteins
+            else:
+                current_df: pd.DataFrame = self.__dataframe[
+                    self.__dataframe["relevant"] == False
+                ]
+
+            current_df.sort_values("protein_name", ignore_index=True, inplace=True)
+
+            for i, (protein_name, protein_id) in enumerate(
+                zip(current_df["protein_name"], current_df["protein_id"])
+            ):
+                sheet.cell(row=i + 2, column=1, value=protein_name)
+                sheet.cell(row=i + 2, column=2, value=protein_id)
