@@ -8,6 +8,16 @@ from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 
+class ClinicallyRelevant:
+    def __init__(self):
+        pass
+
+
+class AllProteins:
+    def __init__(self):
+        pass
+
+
 # TODO: Refactor this class to be split into two classes
 # Class one: ClinicallyRelevant
 # Class two: AllProteins
@@ -36,6 +46,10 @@ class PlasmaTable:
 
         self.__workbook: Workbook = Workbook()
         self.__first_set_up = self.set_up_workbook()
+
+        # TODO: Take this line out once finished with this class
+        # It only needs to be written on first execution
+        self.write_clinical_name_id()
 
         if self.__first_set_up:
             # Only need to write clinical names and IDs on first run
@@ -238,12 +252,16 @@ class PlasmaTable:
             key=lambda col: col.str.lower(),
         )
 
-        for i, (protein_name, protein_id) in enumerate(
-            zip(clinical_df["protein_name"], clinical_df["protein_id"])
+        for i, (protein_name, protein_id, concentration) in enumerate(
+            zip(
+                clinical_df["protein_name"],
+                clinical_df["protein_id"],
+                clinical_df["expected_concentration [log10(pg/ml)]"],
+            )
         ):
             clinical_sheet.cell(row=i + 3, column=1, value=protein_name)
             clinical_sheet.cell(row=i + 3, column=2, value=protein_id)
-            # TODO: Write the execpted concentration
+            clinical_sheet.cell(row=i + 3, column=3, value=concentration)
 
     def write_clinical_data(self) -> None:
         """
