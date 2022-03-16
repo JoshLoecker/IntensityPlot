@@ -1,10 +1,19 @@
 protein_name	protein_id	expected_concentration [log10(pg/ml)]
-Acid phosphatase	Q9NPH0;P13686;Q9BZG2;P11117;P24666;Q6ZNF0	-1
+Acid phosphatase	Q9NPH0	-1
+Acid phosphatase	P13686	-1
+Acid phosphatase	Q9BZG2	-1
+Acid phosphatase	P11117	-1
+Acid phosphatase	P24666	-1
+Acid phosphatase	Q6ZNF0	-1
 Acid phosphatase	P15309	-1
-IgG	P01857;P01861;P01860;P01859	5.88
+IgG	P01857;	5.88
+IgG	P01861	5.88
+IgG	P01860	5.88
+IgG	P01859	5.88
 Alanine aminotransferase (ALT or SGPT)	P24298	4.20
 Albumin	P02768	9.2
-Aldolase	P04075;P05062	5.40
+Aldolase	P05062	5.40
+Aldolase	P05062	5.40
 Alkaline phosphatase (ALP)	P05186	-1
 Alpha-1-Acid glycoprotein (orosomucoid)	P02763	8.22
 Alpha-1-Acid glycoprotein (orosomucoid)	P19652	8.22
@@ -13,7 +22,8 @@ Alpha-2-Antiplasmin	P08697	7.74
 Alpha-2-HS-glycoprotein	P02765	7.91
 Alpha-2-Macroglobulin	P01023	9.03
 Alpha-Fetoprotein (tumor marker)	P02771	-1
-Amylase	P04746;P04745	-1
+Amylase	P04746	-1
+Amylase	P04745	-1
 ACE	P12821	3.87
 Antithrombin III (ATIII)	P01008	7.97
 Apolipoprotein A1	P02647	9.00
@@ -28,9 +38,15 @@ Cancer antigen, human epididymis protein 4 (HE4)	Q14508	-1
 Carcinoembryonic antigen (CEA)	P06731	-1
 Ceruloplasmin	P00450	8.23
 Cholinesterase	P06276	5.23
-Complement C1	P09871;P00736;P02746;P02745;P02747	6.08
+Complement C1	P09871	6.08
+Complement C1	P00736	6.08
+Complement C1	P02746	6.08
+Complement C1	P02745	6.08
+Complement C1	P02747	6.08
 Complement C1 Inhibitor	 P05155	-1
-Complement C1Q	P02745;P02746;P02747	6.08
+Complement C1Q	P02745	6.08
+Complement C1Q	P02746	6.08
+Complement C1Q	P02747	6.08
 Complement C3	P01024	9.05
 Complement C4	P0C0L4	8.13
 Complement C5	P01031	-1
@@ -41,35 +57,63 @@ Cystatin C	P01034	6.68
 Erythropoietin	P01588	-1
 Factor IX antigen	P00740	6.04
 Factor X	P00742	5.70
-Factor XIII	P00488;P05160	7.26
-Ferritin	P02792;P02794	4.08
-Fibrinogen	P02671;P02675;P02679	9.01
+Factor XIII	P00488	7.26
+Factor XIII	P05160	7.26
+Ferritin	P02792	4.08
+Ferritin	P02794	4.08
+Fibrinogen	P02671	9.01
+Fibrinogen	P02675	9.01
+Fibrinogen	P02679	9.01
 Fibronectin	P02751	7.64
-FSH	P01225;P01215	-1
-GGT	P19440 or P36269	-1
+FSH	P01225	-1
+FSH	P01215	-1
+GGT	P19440	-1
+GGT	P36269	-1
 Haptoglobin	P00738	8.86
 Human chorionic gonadotropin (hCG), beta, serum, quantitative	P01233	-1
 Hemopexin	P02790	8.56
 her-2/neu protein	P04626	-1
 Human growth hormone (HGH)	P01241	-1
 Human placental lactogen (HPL)	Q6PF1	-1
-IgA	P61604;B8ZZL8;P01877;P01876;A0A286YEY1;A0A286YEY5;A0A0G2JMB2	3.81
-IgD 	P01880;P01880-2;P0DOX3;A0A0A0MS09	-1
-IgE	P01854;A0A286YES5	-1
-IgM	Ig mu;P01871;A2N7P4;P01871-2;P04220	8.23
-Inhibin-A	P05111;P08476	-1
+IgA	P61604	3.81
+IgA	B8ZZL8	3.81
+IgA	P01877	3.81
+IgA	P01876	3.81
+IgA	A0A286YEY1	3.81
+IgA	A0A286YEY5	3.81
+IgA	A0A0G2JMB2	3.81
+IgD 	P01880	-1
+IgD 	P01880-2	-1
+IgD 	P0DOX3	-1
+IgD 	A0A0A0MS09	-1
+IgE	P01854	-1
+IgE	A0A286YES5	-1
+IgM	P01871	8.23
+IgM	A2N7P4	8.23
+IgM	P01871-2	8.23
+IgM	P04220	8.23
+Inhibin-A	P05111	-1
+Inhibin-A	P08476	-1
 Insulin	P01308	-1
 Insulinlike growth factor-I (IGF-I)	P01343	-1
 Insulinlike growth factor-II (IGF-II)	P01344	-1
 IGFBP-1	P08833	-1
 IGFBP-3	P17936	6.53
 Interleukin-2 receptor (IL-2R)	P0158	-1
-Isocitric dehydrogenase	P50213;P51553;O43837;O75874;P48735	3.82
-Kappa Light chains	Ig kappa;Ig kappa light chain	-1
+Isocitric dehydrogenase	P50213	3.82
+Isocitric dehydrogenase	P51553	3.82
+Isocitric dehydrogenase	O43837	3.82
+Isocitric dehydrogenase	O75874	3.82
+Kappa Light chains	P01834	-1
+Kappa Light chains	A0A5H1ZRQ3	-1
 Lactate dehydrogenase heart fraction (LDH-1)	P07195	4.93
 Lactate dehydrogenase liver fraction (LLDH)	P00338	4.93
 Lactoferrin	Q5EK5	-1
-Lambda Light chains	P0DOY2;P0DOY3;P0CG04;A0M8Q6;P0CF74	-1
+Lambda Light chains	P0DOY2	-1
+Lambda Light chains	P0DOY3	-1
+Lambda Light chains	P0CG04	-1
+Lambda Light chains	A0M8Q6	-1
+Lambda Light chains	P0CF74	-1
 Lipase	P16233	-1
 Lp(a)	P08519	3.15
 Lipoprotein-associated phospholipase A2 (LP-PLA2)	P04054	-1
@@ -92,10 +136,21 @@ Prostatic specific antigen (PSA)	P07288	-1
 Protein C	P04070	5.70
 Protein S	P07225	7.14
 Pseudocholinesterase	P0627	5.23
-Pyruvate kinase	P14618;P30613;V9HWB8	3.40
+Pyruvate kinase	P14618	3.40
+Pyruvate kinase	P30613	3.40
+Pyruvate kinase	V9HWB8	3.40
 Renin	P00797	-1
 Retinol binding protein (RBP)	P02753	8.76
-Sex hormone–binding globulin	P04278;I3L145;I3L1N7;I3L1J1;B4DYU0;I3L2X4;B0FWH4;E9PGW1;P04278-2;F5H5Z8	5.26
+Sex hormone–binding globulin	P04278	5.26
+Sex hormone–binding globulin	I3L145	5.26
+Sex hormone–binding globulin	I3L1N7	5.26
+Sex hormone–binding globulin	I3L1J1	5.26
+Sex hormone–binding globulin	B4DYU0	5.26
+Sex hormone–binding globulin	I3L2X4	5.26
+Sex hormone–binding globulin	B0FWH4	5.26
+Sex hormone–binding globulin	E9PGW1	5.26
+Sex hormone–binding globulin	P04278-2	5.26
+Sex hormone–binding globulin	F5H5Z8	5.26
 Soluble mesothelin-related peptide	Q13421	-1
 Sorbital dehydrogenase (SDH)	Q00796	-1
 Thyroglobulin	P01266	-1

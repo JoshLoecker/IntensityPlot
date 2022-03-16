@@ -4,9 +4,6 @@ Variation (y) vs Abundance rank (x) graph
 Write Excel tables
     - Template is under extra_info folder
 
-Split clinically_relevant.tsv proteins by ID into new lines for each one
-    - keep the name the same
-
 Split excel_writer into two classes
     - ClinicallyRelevant
     - AllProtein
