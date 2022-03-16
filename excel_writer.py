@@ -8,19 +8,6 @@ from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 
-class ClinicallyRelevant:
-    def __init__(self):
-        pass
-
-
-class AllProteins:
-    def __init__(self):
-        pass
-
-
-# TODO: Refactor this class to be split into two classes
-# Class one: ClinicallyRelevant
-# Class two: AllProteins
 class PlasmaTable:
     def __init__(self, data_frame: pd.DataFrame, args: argparse.Namespace):
 
@@ -152,6 +139,9 @@ class PlasmaTable:
         """
         This function will re-merge cells after deleting a column
 
+        This function is going to be used on the All Proteins sheet, as we delete the third column
+        The third column contains expected protein concentration, which is not required for All Proteins
+
         From: https://stackoverflow.com/questions/58412906
 
         :return: None
@@ -278,14 +268,6 @@ class PlasmaTable:
         clinical_ws: Worksheet = self.__workbook[self.__clinical_sheetname]
         start_col = self.get_column_write_start(clinical_ws.title)
 
-        column_headers: list[str] = [
-            "dried_average",
-            "dried_variation",
-            "liquid_average",
-            "liquid_variation",
-            "dried_liquid_ratio",
-        ]
-
         for i, (
             clinical_id,
             dried_average,
@@ -329,38 +311,3 @@ class PlasmaTable:
                     )
 
                     break
-
-    def write_all_protein_name_id(self):
-        pass
-
-    def write_all_protein_data(self):
-        pass
-
-    def write_protein_name_ids(self) -> None:
-        """
-        This function will be responsible for writing the information contained under the protein_name and protein_id fields
-
-        It will write all information to the All Proteins sheet
-        It will only write clinically relevant proteins (using the "relevant" field) to the Clinically Relevant Proteins sheet
-        :return: None
-        """
-
-        for sheet in self.__workbook.worksheets:
-            # Get a dataframe containing all clinically relevant proteins
-            if sheet.title == self.__clinical_sheetname:
-                current_df: pd.DataFrame = self.__dataframe[
-                    self.__dataframe["relevant"]
-                ]
-            # Otherwise get a dataframe with all proteins
-            else:
-                current_df: pd.DataFrame = self.__dataframe[
-                    self.__dataframe["relevant"] == False
-                ]
-
-            current_df.sort_values("protein_name", ignore_index=True, inplace=True)
-
-            for i, (protein_name, protein_id) in enumerate(
-                zip(current_df["protein_name"], current_df["protein_id"])
-            ):
-                sheet.cell(row=i + 2, column=1, value=protein_name)
-                sheet.cell(row=i + 2, column=2, value=protein_id)
