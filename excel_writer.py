@@ -261,7 +261,10 @@ class PlasmaTable:
         ):
             clinical_sheet.cell(row=i + 3, column=1, value=protein_name)
             clinical_sheet.cell(row=i + 3, column=2, value=protein_id)
-            clinical_sheet.cell(row=i + 3, column=3, value=concentration)
+
+            # Only write concentrations that have a known value
+            if int(concentration) != -1:
+                clinical_sheet.cell(row=i + 3, column=3, value=concentration)
 
     def write_clinical_data(self) -> None:
         """
