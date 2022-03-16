@@ -1,16 +1,17 @@
-import arg_parse
-import excel_writer
-import filter_values
-import statistics
-import file_operations
-import plot_generation
-
 import csv
-import pandas as pd
 import pathlib
 
+import pandas as pd
 
-def create_intensity_dataframe(input_file: pathlib.Path) -> pd.DataFrame:
+import arg_parse
+import excel_writer
+import file_operations
+import filter_values
+import plot_generation
+import statistics
+
+
+def create_intensity_dataframe(input_file: pathlib.Path | str) -> pd.DataFrame:
     """
     This function will gather a series of data from the input file
     These data will be:
@@ -76,7 +77,10 @@ def main():
     file_operations.write_plot_to_file(plot=clinically_relevant_plot, args=args)
 
     # Write all proteins to excel file (i.e., write statistics_df)
-    excel_writer.PlasmaTable(data_frame=intensities_df, args=args)
+    # excel_writer.PlasmaTable(data_frame=intensities_df, args=args)
+
+    excel_writer.ClinicallyRelevant(data_frame=intensities_df, args=args)
+    excel_writer.AllProteins(data_frame=intensities_df, args=args)
 
 
 if __name__ == "__main__":
