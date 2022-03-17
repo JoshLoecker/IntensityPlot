@@ -1,9 +1,2 @@
 Variation (y) vs Abundance rank (x) graph
     - Image is in "extra_info/PlasmaProteomics2.pdf" file
-
-Write Excel tables
-    - Template is under extra_info folder
-
-Split excel_writer into two classes
-    - ClinicallyRelevant
-    - AllProtein
