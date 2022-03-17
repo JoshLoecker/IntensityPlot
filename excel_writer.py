@@ -55,8 +55,8 @@ class _WorkbookEditor:
         :return:
         """
         # Freeze top two rows for headers
-        self.workbook[self.clinical_sheetname].freeze_panes = "X3"
-        self.workbook[self._all_proteins_sheetname].freeze_panes = "W3"
+        self._workbook[self.clinical_sheetname].freeze_panes = "A3"
+        self._workbook[self._all_proteins_sheetname].freeze_panes = "A3"
 
         # Set alignment
         # Iterate through each worksheet
@@ -85,13 +85,23 @@ class _WorkbookEditor:
 
         # Add horizontal border below subheading
         for column in range(1, 24):
-            self.workbook[self._clinical_sheetname].cell(
+            self._workbook[self._clinical_sheetname].cell(
                 row=2, column=column
             ).border = medium_bottom_border
 
-            self.workbook[self._all_proteins_sheetname].cell(
+            self._workbook[self._all_proteins_sheetname].cell(
                 row=2, column=column
             ).border = medium_bottom_border
+
+        # Set width for clinical worksheet column A and B
+        # From: https://stackoverflow.com/a/35790441
+        self._workbook[self._clinical_sheetname].column_dimensions["A"].width = 51
+        self._workbook[self._clinical_sheetname].column_dimensions["B"].width = 12
+
+        # Set width for all proteins worksheet column A and B
+        # Do not set column A to "max" value, as this could be very long
+        self._workbook[self._all_proteins_sheetname].column_dimensions["A"].width = 70
+        self._workbook[self._all_proteins_sheetname].column_dimensions["B"].width = 35
 
     def _write_headings(self) -> None:
         """
@@ -485,6 +495,14 @@ class AllProteins:
             # Skip unknown protein names
             if protein_name is None:
                 continue
+
+            # Only get first protein ID if protein_id is not none
+            if protein_id is not None:
+                max_protein_id = protein_id.split(";")[0]
+                additional_ids = protein_id.split(";")[1:]
+            else:
+                max_protein_id = protein_id
+                additional_ids = ""
 
             # Default to SDC column for direct and c18
             if method.lower() == "direct":
