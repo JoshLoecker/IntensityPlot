@@ -499,6 +499,10 @@ class AllProteins:
             # Modify dried/liquid average, etc based on index value
             column_index += index
 
+            # Don't want to write 0.00 values, write empty string instead
+            if value == 0:
+                value = ""
+
             self._sheet.cell(row=row_index, column=1, value=protein_name)
             self._sheet.cell(row=row_index, column=2, value=protein_id)
             self._sheet.cell(row=row_index, column=column_index, value=value)
