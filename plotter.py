@@ -1,5 +1,6 @@
 import argparse
 
+import numpy as np
 import pandas as pd
 import plotly
 import plotly.graph_objects as go
@@ -8,41 +9,113 @@ import file_operations
 import statistics
 
 
-def abundance_vs_lfq_intensity():
+def create_abundance_values(
+    data_frame: pd.DataFrame, remove_albumin: bool = False
+) -> pd.DataFrame:
+
+    if remove_albumin:
+        data_frame = data_frame[data_frame["gene_name"] != "ALB"]
+
+    # Set expected_concentration to float
+    data_frame["expected_concentration"] = data_frame["expected_concentration"].astype(
+        np.float
+    )
+
+    # TODO: Start and finish this graph
+    # Filter by expected concentration
+    data_frame.sort_values(
+        "expected_concentration", ascending=False, ignore_index=True, inplace=True
+    )
+
+    # Create a ranked index
+    data_frame["rank"] = data_frame["expected_concentration"].rank(
+        method="first",
+        na_option="bottom",
+        ascending=False,
+    )
+
+    # Remove values with unknown expected concentration
+    data_frame = data_frame[(data_frame["expected_concentration"] > 0)]
+    return data_frame
+
+
+def abundance_vs_lfq_intensity(
+    data_frame: pd.DataFrame, args: argparse.Namespace
+) -> plotly.graph_objects.Figure:
     """
     This function will be responsible for creating an Abundance vs LFQ Intensity plot
     Abundnace will be on the x-axis, and LFQ Intensity will be on the y-axis
+
+    :param data_frame: The dataframe containing intensities, averages, etc.
+    :param args: The obtained command line arguments
     :return:
     """
-    raise NotImplementedError
+    abundance_frame: pd.DataFrame = create_abundance_values(data_frame)
+    plot_df: pd.DataFrame = abundance_frame[abundance_frame["relevant"]]
+
+    plot_df = plot_df[plot_df["gene_name"] != "ALB"]
+
+    # Create the scatter plot
+    plot = go.Figure()
+    plot.add_trace(
+        go.Scatter(
+            x=plot_df["rank"],
+            y=plot_df["dried_average"],
+            mode="markers",
+            customdata=plot_df[["gene_name"]],
+            hovertemplate="<br>".join(
+                [
+                    "Gene Name: %{customdata[0]}",
+                    "Abundance Rank: %{x}",
+                    "Dried Intensity: %{y}",
+                    "<extra></extra>",
+                ]
+            ),
+        ),
+    )
+
+    # TODO: This needs to be finished
+    # Add buttons for switching between average, dried, and liquid intensity?
+    # Should albumin be removed? Boolean option available in create_abundance_values parameters
+    plot.update_layout(title="Without Albumin Data")
+    plot.update_xaxes(title_text="Abundance Rank")
+    plot.update_yaxes(title_text="Dried Intensity")
+
+    plot.write_html("/Users/joshl/Downloads/without_albumin.html")
+
+    return plotly.graph_objects.Figure()
 
 
 # Variation (y) vs Abundance rank (x) graph
-def abundance_vs_variation():
+def abundance_vs_variation(data_frame: pd.DataFrame, args: argparse.Namespace):
     """
     This function will be responsible for creating an Abundance vs Variation plot
     Abundance will be on the x-axis and Variation will be on the y-axis
+
+    :param data_frame: The dataframe containing intensities, averages, etc.
+    :param args: The obtained command line arguments
     :return:
     """
-    raise NotImplementedError
+    # TODO: Start and finish this graph
+    return plotly.graph_objects.Figure()
 
 
 def liquid_intensity_vs_dried_intensity(
-    intensities: pd.DataFrame,
+    data_frame: pd.DataFrame,
     args: argparse.Namespace,
 ) -> plotly.graph_objects.Figure:
     """
     This function is responsible for creating the final Plotly graph
 
 
-    :param intensities: The dataframe containing intensity values from MaxQuant
+    :param data_frame: The dataframe containing intensity values from MaxQuant
     :param args: Command line arguments retrieved from arg_parse.py
     :return: A plotly.graph_objects.Figure
     """
 
     # Create a new dataframe to filter the values we need
     # Only take clinically relevant proteins
-    plot_df: pd.DataFrame = intensities[intensities["relevant"]]
+    plot_df: pd.DataFrame = data_frame[data_frame["relevant"]]
 
     # Only take the first majority protein ID
     plot_df = plot_df.assign(

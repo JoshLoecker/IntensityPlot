@@ -7,8 +7,9 @@ import arg_parse
 import excel_writer
 import file_operations
 import filter_values
-import plot_generation
+import plotter
 import statistics
+from enums import PlotType
 
 
 def create_intensity_dataframe(input_file: pathlib.Path | str) -> pd.DataFrame:
@@ -71,10 +72,25 @@ def main():
     intensities_df.sort_values("protein_name", ignore_index=True, inplace=True)
     intensities_df.reset_index(drop=True, inplace=True)
 
-    clinically_relevant_plot = plot_generation.liquid_intensity_vs_dried_intensity(
-        intensities=intensities_df, args=args
+    clinically_relevant_plot = plotter.liquid_intensity_vs_dried_intensity(
+        data_frame=intensities_df, args=args
     )
-    file_operations.write_plot_to_file(plot=clinically_relevant_plot, args=args)
+    abundance_lfq_plot = plotter.abundance_vs_lfq_intensity(
+        data_frame=intensities_df, args=args
+    )
+    abundance_variation = plotter.abundance_vs_variation(
+        data_frame=intensities_df, args=args
+    )
+
+    file_operations.write_plot(
+        plot=clinically_relevant_plot, plot_type=PlotType.lfq_variation, args=args
+    )
+    file_operations.write_plot(
+        plot=abundance_lfq_plot, plot_type=PlotType.abundance_lfq, args=args
+    )
+    file_operations.write_plot(
+        plot=abundance_variation, plot_type=PlotType.abundance_variation, args=args
+    )
 
     # Write all proteins to excel file
     excel_writer.ClinicallyRelevant(data_frame=intensities_df, args=args)

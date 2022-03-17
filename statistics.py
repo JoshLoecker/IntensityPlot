@@ -55,6 +55,9 @@ def calculate_statistics(intensities: pd.DataFrame) -> pd.DataFrame:
     intensities["liquid_average"] = round(
         intensities[["liquid_1", "liquid_2", "liquid_3"]].mean(axis=1), 4
     )
+    intensities["average_intensity"] = round(
+        intensities[["liquid_average", "dried_average"]].mean(axis=1), 4
+    )
 
     # Calculate standard deviations
     intensities["dried_std_dev"] = round(

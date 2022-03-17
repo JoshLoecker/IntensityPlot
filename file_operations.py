@@ -1,6 +1,9 @@
 import argparse
 import pathlib
+
 import plotly
+
+import enums
 
 
 def get_experiment_title(args: argparse.Namespace) -> str:
@@ -45,23 +48,26 @@ def get_output_file_name(args: argparse.Namespace) -> str:
     file_name = file_name.replace(" ", "_")
     file_name = file_name.replace("-", "_")
 
+    # We dont want the trailing 'experiment' in the file name
+    file_name = file_name.replace("_experiment", "")
+
     return file_name
 
 
-def write_plot_to_file(
+def write_plot(
     plot: plotly.graph_objects.Figure,
+    plot_type: enums.PlotType,
     args: argparse.Namespace,
 ):
     """
     This function will simply handle writing the plotly graph to an output file
 
     :param plot: The plotly graph
+    :param plot_type: The "name" of the plot type (i.e., abundance vs variation, LFQ variation, etc.)
     :param args: The arguments retrieved from the command line using arg_parse
     :return: None
     """
-
-    file_name = get_output_file_name(args)
-    file_name += ".html"
+    file_name = f"{plot_type.name}_{get_output_file_name(args)}.html"
 
     # Place the html plot next to the input file
     output_path = pathlib.Path(args.input).parent

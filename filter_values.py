@@ -7,9 +7,9 @@ import pandas as pd
 
 class _GatherProteinData:
     def __init__(self):
-        self.__clinical_protein_names: list[str] = []
-        self.__clinical_protein_ids: list[str] = []
-        self.__expected_concentration: list[str] = []
+        self._clinical_protein_names: list[str] = []
+        self._clinical_protein_ids: list[str] = []
+        self._expected_concentration: list[str] = []
 
         # Gather clinically relevant proteins and protein IDS
         with open("clinically_relevant.tsv", "r") as i_stream:
@@ -17,21 +17,21 @@ class _GatherProteinData:
             next(reader)
 
             for line in reader:
-                self.__clinical_protein_names.append(line[0])
-                self.__clinical_protein_ids.append(line[1])
-                self.__expected_concentration.append(line[2])
+                self._clinical_protein_names.append(line[0])
+                self._clinical_protein_ids.append(line[1])
+                self._expected_concentration.append(line[2])
 
     @property
-    def clinical_protein_names(self) -> list[str]:
-        return self.__clinical_protein_names
+    def clinical_names(self) -> list[str]:
+        return self._clinical_protein_names
 
     @property
-    def clinical_protein_ids(self) -> list[str]:
-        return self.__clinical_protein_ids
+    def clinical_ids(self) -> list[str]:
+        return self._clinical_protein_ids
 
     @property
-    def expected_concentration(self) -> list[str]:
-        return self.__expected_concentration
+    def expected_concentrations(self) -> list[str]:
+        return self._expected_concentration
 
 
 def filter_variation(data_frame: pd.DataFrame, max_variation: int = 20) -> pd.DataFrame:
@@ -117,24 +117,25 @@ def add_clinical_relevance(data_frame: pd.DataFrame) -> pd.DataFrame:
 
     # Gather a list of clinically relevant proteins
     gather_proteins = _GatherProteinData()
-    clinical_ids = gather_proteins.clinical_protein_ids
-    clinical_names = gather_proteins.clinical_protein_names
-    expected_concentration = gather_proteins.expected_concentration
+    clinical_ids = gather_proteins.clinical_ids
+    clinical_names = gather_proteins.clinical_names
+    expected_concentrations = gather_proteins.expected_concentrations
 
     for i, (max_quant_id, max_quant_name) in enumerate(
         zip(data_frame["protein_id"], data_frame["protein_name"])
     ):
 
-        for j, (clinical_id, clinical_name) in enumerate(
-            zip(clinical_ids, clinical_names)
+        for j, (clinical_id, clinical_name, expected_conc) in enumerate(
+            zip(clinical_ids, clinical_names, expected_concentrations)
         ):
 
             if substring_id_match(max_quant_id, clinical_id) or substring_name_match(
                 max_quant_id, clinical_id
             ):
                 data_frame.loc[i, "relevant"] = True
-                data_frame.loc[i, "expected_concentration"] = expected_concentration[i]
+                data_frame.loc[i, "expected_concentration"] = expected_conc
                 data_frame.loc[i, "clinical_id"] = clinical_id
+
                 break
 
     # Must replace NaN values otherwise pandas throws a ValueError when trying to filter
