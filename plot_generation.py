@@ -1,9 +1,11 @@
 import argparse
-import file_operations
-import statistics
+
 import pandas as pd
 import plotly
 import plotly.graph_objects as go
+
+import file_operations
+import statistics
 
 
 def abundance_vs_lfq_intensity():
@@ -41,6 +43,11 @@ def liquid_intensity_vs_dried_intensity(
     # Create a new dataframe to filter the values we need
     # Only take clinically relevant proteins
     plot_df: pd.DataFrame = intensities[intensities["relevant"]]
+
+    # Only take the first majority protein ID
+    plot_df = plot_df.assign(
+        majority_id=plot_df["protein_id"].str.split(";", expand=True, n=1)[0]
+    )
 
     # Calculate information required to create a trendline trace
     trendline = statistics.CalculateLinearRegression(plot_df)
@@ -119,13 +126,14 @@ def liquid_intensity_vs_dried_intensity(
         customdata=plot_df[
             [
                 "gene_name",
-                "protein_id",
+                "majority_id",
                 "average_variation",
             ]
         ],
         hovertemplate="<br>".join(
             [
                 "Gene Name: %{customdata[0]}",
+                "Majority Protein ID: %{customdata[1]}",
                 "Dried Average: %{y}%",
                 "Liquid Average: %{x}%",
                 "Average Variation: ± %{customdata[2]}%",
