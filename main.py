@@ -77,7 +77,10 @@ def main():
     file_operations.write_plot_to_file(plot=clinically_relevant_plot, args=args)
 
     # Write all proteins to excel file (i.e., write statistics_df)
-    excel_writer.PlasmaTable(data_frame=intensities_df, args=args)
+    # excel_writer.PlasmaTable(data_frame=intensities_df, args=args)
+
+    excel_writer.ClinicallyRelevant(data_frame=intensities_df, args=args)
+    excel_writer.AllProteins(data_frame=intensities_df, args=args)
 
 
 if __name__ == "__main__":
