@@ -74,7 +74,6 @@ def main():
     clinically_relevant_plot = plot_generation.liquid_intensity_vs_dried_intensity(
         intensities=intensities_df, args=args
     )
-    clinically_relevant_plot.show()
     file_operations.write_plot_to_file(plot=clinically_relevant_plot, args=args)
 
     # Write all proteins to excel file
