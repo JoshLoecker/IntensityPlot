@@ -67,7 +67,7 @@ def write_plot(
     :param args: The arguments retrieved from the command line using arg_parse
     :return: None
     """
-    file_name = f"{plot_type.name}_{get_output_file_name(args)}.html"
+    file_name = f"{plot_type.value}_{get_output_file_name(args)}.html"
 
     # Place the html plot next to the input file
     output_path = pathlib.Path(args.input).parent
