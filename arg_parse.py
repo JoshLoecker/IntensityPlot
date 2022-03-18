@@ -1,19 +1,3 @@
-"""
-This file does nothing, but as evidenced by the file name, it is the location for parsing command line arguments
-
-The following arguments should be parsed
-- Help (--help)
-- Input file (/data/c18/sdc/proteinGroups.txt
-- Save location (default to location next to input file)
-- Experiment flags
-    - Do not allow 'direct' & 'c18' at the same time
-    - Do not allow 'sdc' & 'urea' at the same time
-
-    - '--direct'
-    - '--c18'
-    - '--sdc'
-    - '--urea'
-"""
 import argparse
 
 

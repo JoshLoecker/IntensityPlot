@@ -8,6 +8,9 @@ import file_operations
 import statistics
 
 
+# TODO: Can the abundance_intensity and abundance_variation functions be more generalized?
+
+
 def create_abundance_values(
     original_df: pd.DataFrame, remove_albumin: bool = True
 ) -> pd.DataFrame:
