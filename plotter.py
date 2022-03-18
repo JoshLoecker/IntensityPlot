@@ -1,6 +1,5 @@
 import argparse
 
-import numpy as np
 import pandas as pd
 import plotly
 import plotly.graph_objects as go
@@ -10,21 +9,24 @@ import statistics
 
 
 def create_abundance_values(
-    data_frame: pd.DataFrame, remove_albumin: bool = False
+    original_df: pd.DataFrame, remove_albumin: bool = True
 ) -> pd.DataFrame:
 
     if remove_albumin:
-        data_frame = data_frame[data_frame["gene_name"] != "ALB"]
+        # Need to use '.copy()' otherwise Pandas is angry that we are changing values of the original dataframe
+        # From: https://stackoverflow.com/questions/59821468/
+        data_frame: pd.DataFrame = original_df[original_df["gene_name"] != "ALB"].copy()
+    else:
+        data_frame: pd.DataFrame = original_df.copy()
 
-    # Set expected_concentration to float
+    # Set expected_concentration to float values
     data_frame["expected_concentration"] = data_frame["expected_concentration"].astype(
-        np.float
+        float
     )
 
-    # TODO: Start and finish this graph
     # Filter by expected concentration
-    data_frame.sort_values(
-        "expected_concentration", ascending=False, ignore_index=True, inplace=True
+    data_frame = data_frame.sort_values(
+        "expected_concentration", ascending=False, ignore_index=True
     )
 
     # Create a ranked index
@@ -34,8 +36,8 @@ def create_abundance_values(
         ascending=False,
     )
 
-    # Remove values with unknown expected concentration
-    data_frame = data_frame[(data_frame["expected_concentration"] > 0)]
+    # Remove values with unknown concentration
+    data_frame = data_frame[(data_frame["expected_concentration"] >= 0)]
     return data_frame
 
 
@@ -53,12 +55,12 @@ def abundance_vs_lfq_intensity(
     abundance_frame: pd.DataFrame = create_abundance_values(data_frame)
     plot_df: pd.DataFrame = abundance_frame[abundance_frame["relevant"]]
 
-    plot_df = plot_df[plot_df["gene_name"] != "ALB"]
-
     # Create the scatter plot
+    # Intensity is set to dried average
     plot = go.Figure()
     plot.add_trace(
         go.Scatter(
+            visible=True,
             x=plot_df["rank"],
             y=plot_df["dried_average"],
             mode="markers",
@@ -74,14 +76,92 @@ def abundance_vs_lfq_intensity(
         ),
     )
 
+    # Intensity is set to liquid average
+    plot.add_trace(
+        go.Scatter(
+            visible=False,
+            x=plot_df["rank"],
+            y=plot_df["liquid_average"],
+            mode="markers",
+            customdata=plot_df[["gene_name"]],
+            hovertemplate="<br>".join(
+                [
+                    "Gene Name: %{customdata[0]}",
+                    "Abundance Rank: %{x}",
+                    "Liquid Intensity: %{y}",
+                    "<extra></extra>",
+                ]
+            ),
+        )
+    )
+
+    # Intensity is set to average intensity
+    plot.add_trace(
+        go.Scatter(
+            visible=False,
+            x=plot_df["rank"],
+            y=plot_df["average_intensity"],
+            mode="markers",
+            customdata=plot_df[["gene_name"]],
+            hovertemplate="<br>".join(
+                [
+                    "Gene name: %{customdata}",
+                    "Abundance Rank: %{x}",
+                    "Average Intensity: %{y}",
+                    "<extra></extra>",
+                ]
+            ),
+        )
+    )
+
+    # Add buttons to filter through each of the various intensities
+    # Dried, Liquid, Average is order of True/False values
+    plot.update_layout(
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="up",
+                showactive=True,
+                buttons=list(
+                    [
+                        dict(
+                            label="View Dried Intensity",
+                            method="update",
+                            args=[
+                                {"visible": [True, False, False]},
+                                {"yaxis": {"title": "Dried Intensity"}},
+                            ],
+                        ),
+                        dict(
+                            label="View Liquid Intensity",
+                            method="update",
+                            args=[
+                                {"visible": [False, True, False]},
+                                {"yaxis": {"title": "Liquid Intensity"}},
+                            ],
+                        ),
+                        dict(
+                            label="View Average Intensity",
+                            method="update",
+                            args=[
+                                {"visible": [False, False, True]},
+                                {"yaxis": {"title": "Average Intensity"}},
+                            ],
+                        ),
+                    ]
+                ),
+            )
+        ]
+    )
+
     # TODO: This needs to be finished
     # Add buttons for switching between average, dried, and liquid intensity?
-    # Should albumin be removed? Boolean option available in create_abundance_values parameters
     plot.update_layout(title="Without Albumin Data")
     plot.update_xaxes(title_text="Abundance Rank")
     plot.update_yaxes(title_text="Dried Intensity")
 
-    plot.write_html("/Users/joshl/Downloads/without_albumin.html")
+    # plot.write_html("/Users/joshl/Downloads/without_albumin.html")
+    plot.show()
 
     return plotly.graph_objects.Figure()
 
@@ -216,7 +296,7 @@ def liquid_intensity_vs_dried_intensity(
     )
 
     # Add buttons to filter through each of the various intensities
-    # Dried, Liquid, Average, Trendline
+    # Dried, Liquid, Average, Trendline is order of True/False values
     plot.update_layout(
         updatemenus=[
             dict(
