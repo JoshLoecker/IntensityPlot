@@ -8,5 +8,5 @@ class PlotType(Enum):
     """
 
     abundance_variation = "abundance_variation"
-    abundance_lfq = "abundance_lfq"
-    lfq_variation = "lfq_variation"
+    abundance_intensity = "abundance_intensity"
+    intensity_variation = "intensity_variation"
