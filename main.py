@@ -60,9 +60,12 @@ def create_intensity_dataframe(input_file: pathlib.Path | str) -> pd.DataFrame:
 
 
 def main():
+    print("Collecting arguments")
     args = arg_parse.ArgParse()
     args = args.args
 
+    # Create required data frame
+    print("Creating required dataframe")
     intensities_df = create_intensity_dataframe(input_file=args.input)
     intensities_df = statistics.calculate_statistics(intensities=intensities_df)
     intensities_df = filter_values.filter_variation(intensities_df)
@@ -72,27 +75,34 @@ def main():
     intensities_df.sort_values("protein_name", ignore_index=True, inplace=True)
     intensities_df.reset_index(drop=True, inplace=True)
 
-    clinically_relevant_plot = plotter.liquid_intensity_vs_dried_intensity(
+    # Create plots
+    print("Creating plots")
+    liquid_dried_intensity_plot = plotter.liquid_intensity_vs_dried_intensity(
         data_frame=intensities_df, args=args
     )
-    abundance_lfq_plot = plotter.abundance_vs_lfq_intensity(
+    abundance_intensity_plot = plotter.abundance_vs_intensity(
         data_frame=intensities_df, args=args
     )
-    abundance_variation = plotter.abundance_vs_variation(
+    abundance_variation_plot = plotter.abundance_vs_variation(
         data_frame=intensities_df, args=args
     )
 
+    # Write plots to file
+    print("Writing plots to file")
     file_operations.write_plot(
-        plot=clinically_relevant_plot, plot_type=PlotType.lfq_variation, args=args
+        plot=liquid_dried_intensity_plot,
+        plot_type=PlotType.intensity_variation,
+        args=args,
     )
     file_operations.write_plot(
-        plot=abundance_lfq_plot, plot_type=PlotType.abundance_lfq, args=args
+        plot=abundance_intensity_plot, plot_type=PlotType.abundance_intensity, args=args
     )
     file_operations.write_plot(
-        plot=abundance_variation, plot_type=PlotType.abundance_variation, args=args
+        plot=abundance_variation_plot, plot_type=PlotType.abundance_variation, args=args
     )
 
-    # Write all proteins to excel file
+    # Write protein information to excel file
+    print("Writing data to excel")
     excel_writer.ClinicallyRelevant(data_frame=intensities_df, args=args)
     excel_writer.AllProteins(data_frame=intensities_df, args=args)
 
