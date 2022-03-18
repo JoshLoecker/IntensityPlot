@@ -41,7 +41,7 @@ def create_abundance_values(
     return data_frame
 
 
-def abundance_vs_lfq_intensity(
+def abundance_vs_intensity(
     data_frame: pd.DataFrame, args: argparse.Namespace
 ) -> plotly.graph_objects.Figure:
     """
@@ -154,16 +154,11 @@ def abundance_vs_lfq_intensity(
         ]
     )
 
-    # TODO: This needs to be finished
-    # Add buttons for switching between average, dried, and liquid intensity?
-    plot.update_layout(title="Without Albumin Data")
+    plot.update_layout(title="Abundance vs LFQ Intensity")
     plot.update_xaxes(title_text="Abundance Rank")
-    plot.update_yaxes(title_text="Dried Intensity")
+    plot.update_yaxes(title_text="Dried Intensity")  # Set default xaxis label
 
-    # plot.write_html("/Users/joshl/Downloads/without_albumin.html")
-    plot.show()
-
-    return plotly.graph_objects.Figure()
+    return plot
 
 
 # Variation (y) vs Abundance rank (x) graph
@@ -176,8 +171,113 @@ def abundance_vs_variation(data_frame: pd.DataFrame, args: argparse.Namespace):
     :param args: The obtained command line arguments
     :return:
     """
-    # TODO: Start and finish this graph
-    return plotly.graph_objects.Figure()
+    abundance_frame: pd.DataFrame = create_abundance_values(data_frame)
+    plot_df: pd.DataFrame = abundance_frame[abundance_frame["relevant"]]
+
+    # Create the scatter plot
+    # Intensity is set to dried variation
+    plot = go.Figure()
+    plot.add_trace(
+        go.Scatter(
+            visible=True,
+            x=plot_df["rank"],
+            y=plot_df["dried_variation"],
+            mode="markers",
+            customdata=plot_df[["gene_name"]],
+            hovertemplate="<br>".join(
+                [
+                    "Gene Name: %{customdata[0]}",
+                    "Abundance Rank: %{x}",
+                    "Dried Variation: %{y:.2f}%",
+                    "<extra></extra>",
+                ]
+            ),
+        ),
+    )
+
+    # Intensity is set to liquid variation
+    plot.add_trace(
+        go.Scatter(
+            visible=False,
+            x=plot_df["rank"],
+            y=plot_df["liquid_variation"],
+            mode="markers",
+            customdata=plot_df[["gene_name"]],
+            hovertemplate="<br>".join(
+                [
+                    "Gene Name: %{customdata[0]}",
+                    "Abundance Rank: %{x}",
+                    "Liquid Variation: ± %{y:.2f}%",
+                    "<extra></extra>",
+                ]
+            ),
+        )
+    )
+
+    # Intensity is set to average variation
+    plot.add_trace(
+        go.Scatter(
+            visible=False,
+            x=plot_df["rank"],
+            y=plot_df["average_variation"],
+            mode="markers",
+            customdata=plot_df[["gene_name"]],
+            hovertemplate="<br>".join(
+                [
+                    "Gene name: %{customdata}",
+                    "Abundance Rank: %{x}",
+                    "Average Variation: %{y:.2f}%",
+                    "<extra></extra>",
+                ]
+            ),
+        )
+    )
+
+    # Add buttons to filter through each of the various intensities
+    # Dried, Liquid, Average is order of True/False values
+    plot.update_layout(
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="up",
+                showactive=True,
+                buttons=list(
+                    [
+                        dict(
+                            label="View Dried Variation",
+                            method="update",
+                            args=[
+                                {"visible": [True, False, False]},
+                                {"yaxis": {"title": "Dried Variation"}},
+                            ],
+                        ),
+                        dict(
+                            label="View Liquid Variation",
+                            method="update",
+                            args=[
+                                {"visible": [False, True, False]},
+                                {"yaxis": {"title": "Liquid Variation"}},
+                            ],
+                        ),
+                        dict(
+                            label="View Average Variation",
+                            method="update",
+                            args=[
+                                {"visible": [False, False, True]},
+                                {"yaxis": {"title": "Average Variation"}},
+                            ],
+                        ),
+                    ]
+                ),
+            )
+        ]
+    )
+
+    plot.update_layout(title="Abundance vs Variation")
+    plot.update_xaxes(title_text="Abundance Rank")
+    plot.update_yaxes(title_text="Dried Variation")  # Set default xaxis label
+
+    return plot
 
 
 def liquid_intensity_vs_dried_intensity(
