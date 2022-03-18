@@ -4,7 +4,7 @@ from sklearn.linear_model import LinearRegression
 
 
 class CalculateLinearRegression:
-    def __init__(self, data_frame: pd.DataFrame):
+    def __init__(self, data_frame: pd.DataFrame, remove_albumin: bool = True):
         """
         Calculate the trendline required for linear regression
 
@@ -14,7 +14,8 @@ class CalculateLinearRegression:
         """
 
         # Remove albumin from our calculations, it is a large outlier
-        data_frame = data_frame[data_frame["gene_name"] != "ALB"]
+        if remove_albumin:
+            data_frame = data_frame[data_frame["gene_name"] != "ALB"]
 
         x_values = np.array(data_frame["liquid_average"]).reshape((-1, 1))
         y_values = np.array(data_frame["dried_average"])
