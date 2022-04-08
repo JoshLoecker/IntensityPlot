@@ -16,7 +16,7 @@ For Windows:
 py -m venv env
 ```
 
-After that, you will need to activate the virtual environment by running the 'activate' file in the virtual environment folder you created in the last step.
+Next, you will need to activate the virtual environment by running the 'activate' file in the virtual environment folder you created in the last step.
 ```
 For Unix/Mac systems:
 source env/bin/activate
