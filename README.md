@@ -65,7 +65,7 @@ For Windows systems:
 python main.py --c18 --sdc --input ./data/c18/sdc/proteinGroups.txt --excel ./data/experiment_results.xlsx
 ```
 # Running the Program - GUI
-Instead of running the program through the command line,
+Instead of giving arguments/filenames through the command line,
 you can run the program through a basic GUI.
 
 You will still need to open your command line to launch the program.
