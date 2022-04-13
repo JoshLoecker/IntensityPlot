@@ -34,7 +34,7 @@ For Windows:
 py -m pip install -r requirements.txt
 ```
 
-## Running the Program
+## Running the Program - Command Line
 
 This program uses command line arguments to determine what kind of input is being used and where the excel file to print to is saved.
 Available arguments include:
@@ -57,8 +57,36 @@ After the input flag, enter the location of a file named "proteinGroups.txt".
 
 After the excel flag, enter the location of the excel file (if it does not yet exist, it will be created).
 
-Examples:
+Examples (where 'main.py' is the location of your main.py file):
 ```
+For Unix/Mac systems:
 python3 main.py --direct --urea --input ./data/direct/urea/proteinGroups.txt --excel ./data/experiment_results.xlsx
-python3 main.py --c18 --sdc --input ./data/c18/sdc/proteinGroups.txt --excel ./data/experiment_results.xlsx
+For Windows systems:
+python main.py --c18 --sdc --input ./data/c18/sdc/proteinGroups.txt --excel ./data/experiment_results.xlsx
 ```
+# Running the Program - GUI
+Instead of running the program through the command line,
+you can run the program through a basic GUI.
+
+You will still need to open your command line to launch the program.
+First, change your directory to the location you downloaded MaxQuantAnalysis.
+Example:
+```
+cd C:\Users\YourName\Downloads\MaxQuantAnalysis
+```
+
+Then launch the program with this command:
+```
+For Unix/Mac systems:
+python3 GUI.py
+For Windows systems:
+python GUI.py
+```
+You should see this window open.
+![img.png](img.png)
+
+Click browse for each file you'd like to use.
+Match the type of file you select with the type indicated to the left of the browse button.
+
+You can run the program with a minimum of two files: one Excel file and one proteinGroups.txt file.
+Click the "Run with Selected Files" button at the bottom to run the program.
